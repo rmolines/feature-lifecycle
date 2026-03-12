@@ -295,26 +295,42 @@ See `templates/schemas.md` for the full format.
 ## Execution DAG
 
 task: D1
+title: Walking skeleton — end-to-end integration
 depends_on:
 executor: sonnet
 isolation: worktree
+batch: 1
+files:
+- src/index.ts
+- package.json
 max_retries: 2
 acceptance: npm test exits 0
 
 task: D2
+title: Environment variable scaffolding
 depends_on:
 executor: haiku
 isolation: none
+batch: 1
+files:
+- .env.example
 max_retries: 2
 acceptance: grep "NEW_VAR" .env.example returns the line
 
 task: D3
+title: New API endpoint with integration test
 depends_on: D1
 executor: sonnet
 isolation: worktree
+batch: 2
+files:
+- src/routes/newRoute.ts
+- tests/newRoute.test.ts
 max_retries: 2
 acceptance: npm run build exits 0 and new endpoint returns 200
 ```
+
+Do not wrap the DAG in code fences (` ``` `). The DAG must be bare key:value text for deterministic parsing.
 
 ---
 
@@ -337,6 +353,8 @@ If all are "none": `Infrastructure: no changes needed.`
 
 ## Present and get approval
 
+When presenting the plan to the user, include a compact summary table showing deliverables, executors, batches, and dependencies. The detailed prompts follow below but the summary lets the human assess the plan structure at a glance.
+
 Present the complete plan. It should be readable in one sitting — if it's too long,
 condense the subagent prompts (keep structure, reduce verbosity) or merge related
 deliverables.
@@ -354,6 +372,11 @@ After approval, save to the same directory as prd.md:
 `~/.claude/discoveries/<repo>/<feature>/plan.md`
 
 Use the template from `templates/plan-template.md` as the base structure.
+
+Then generate the visual plan view so the human can review the structure in the browser:
+```bash
+bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/discoveries/<repo>/<feature>/plan.md
+```
 
 Confirm:
 ```

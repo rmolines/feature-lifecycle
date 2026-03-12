@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plan View</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Acceptance criteria toggle */
+    .acceptance-content { display: none; }
+    .acceptance-content.open { display: block; }
+    .toggle-btn svg { transition: transform 0.2s; }
+    .toggle-btn.open svg { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+  <!-- Data injected by plan-view.sh -->
+  <script id="plan-data-raw" type="application/json">__PLAN_DATA__</script>
+
+  <script>
+    // ─── Data ────────────────────────────────────────────────────────────────
+    const planData = JSON.parse(document.getElementById('plan-data-raw').textContent);
+    const tasks = planData.tasks || [];
+    const results = planData.results || [];
+
+    // Build results lookup by task ID
+    const resultsMap = {};
+    results.forEach(r => { resultsMap[r.task] = r; });
+
+    // Group tasks by batch
+    const batches = {};
+    tasks.forEach(t => {
+      const b = t.batch !== undefined ? t.batch : 0;
+      if (!batches[b]) batches[b] = [];
+      batches[b].push(t);
+    });
+    const batchKeys = Object.keys(batches).map(Number).sort((a, b) => a - b);
+
+    const totalTasks = tasks.length;
+    const batchCount = batchKeys.length;
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function executorBadge(executor) {
+      if (!executor) return '';
+      const e = executor.toLowerCase();
+      if (e.includes('sonnet')) {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">${escapeHtml(executor)}</span>`;
+      }
+      if (e.includes('haiku')) {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">${escapeHtml(executor)}</span>`;
+      }
+      if (e.includes('opus')) {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">${escapeHtml(executor)}</span>`;
+      }
+      return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">${escapeHtml(executor)}</span>`;
+    }
+
+    function isolationBadge(isolation) {
+      if (!isolation) return '';
+      const i = isolation.toLowerCase();
+      if (i === 'worktree') {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">${escapeHtml(isolation)}</span>`;
+      }
+      return `<span class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-500">${escapeHtml(isolation) || 'none'}</span>`;
+    }
+
+    function statusBadge(status) {
+      if (!status) return '';
+      const s = status.toLowerCase();
+      if (s === 'success') {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-green-500 text-white">success</span>`;
+      }
+      if (s === 'partial') {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-yellow-400 text-yellow-900">partial</span>`;
+      }
+      if (s === 'failed') {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white">failed</span>`;
+      }
+      if (s === 'skipped') {
+        return `<span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-gray-400 text-white">skipped</span>`;
+      }
+      return `<span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-gray-200 text-gray-600">${escapeHtml(status)}</span>`;
+    }
+
+    function cardBorderClass(result) {
+      if (!result) return 'border-gray-200';
+      const s = (result.status || '').toLowerCase();
+      if (s === 'success') return 'border-green-400';
+      if (s === 'partial') return 'border-yellow-400';
+      if (s === 'failed') return 'border-red-400';
+      if (s === 'skipped') return 'border-gray-300';
+      return 'border-gray-200';
+    }
+
+    function renderFiles(filesStr) {
+      if (!filesStr) return '';
+      const files = filesStr.split(',').map(f => f.trim()).filter(Boolean);
+      if (files.length === 0) return '';
+      const items = files.map(f =>
+        `<span class="inline-block font-mono text-xs bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-gray-600 mr-1 mb-1">${escapeHtml(f)}</span>`
+      ).join('');
+      return `<div class="mt-2">${items}</div>`;
+    }
+
+    function renderDependencies(dependsOn) {
+      if (!dependsOn) return '';
+      const deps = dependsOn.split(',').map(d => d.trim()).filter(Boolean);
+      if (deps.length === 0) return '';
+      const badges = deps.map(d =>
+        `<span class="inline-block font-mono text-xs bg-indigo-50 border border-indigo-200 rounded px-1.5 py-0.5 text-indigo-700 mr-1">${escapeHtml(d)}</span>`
+      ).join('');
+      return `<div class="mt-1.5 flex items-center gap-1 flex-wrap">
+        <span class="text-xs text-gray-400">depends on:</span>
+        ${badges}
+      </div>`;
+    }
+
+    function renderCard(task) {
+      const result = resultsMap[task.task];
+      const borderClass = cardBorderClass(result);
+      const cardId = `card-${task.task.replace(/\s+/g, '-')}`;
+      const acceptanceId = `acc-${task.task.replace(/\s+/g, '-')}`;
+
+      const summaryHtml = result && result.summary
+        ? `<p class="text-sm text-gray-600 mt-1">${escapeHtml(result.summary)}</p>`
+        : '';
+
+      const errorsHtml = result && result.errors
+        ? `<div class="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2"><strong>Errors:</strong> ${escapeHtml(result.errors)}</div>`
+        : '';
+
+      const validationHtml = result && result.validation_result
+        ? `<div class="mt-1.5 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-2 font-mono whitespace-pre-wrap">${escapeHtml(result.validation_result)}</div>`
+        : '';
+
+      const filesChangedHtml = result && result.files_changed
+        ? `<div class="mt-1.5"><span class="text-xs text-gray-400">files changed:</span>${renderFiles(result.files_changed)}</div>`
+        : '';
+
+      const resultSection = result
+        ? `<div class="mt-2 border-t border-gray-100 pt-2">
+            ${summaryHtml}
+            ${filesChangedHtml}
+            ${errorsHtml}
+            ${validationHtml}
+          </div>`
+        : '';
+
+      return `
+        <div id="${cardId}" class="bg-white rounded-lg shadow-sm border-2 ${borderClass} p-4 flex flex-col gap-1">
+          <!-- Header: task ID + title + status badge -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-sm font-bold text-gray-500">${escapeHtml(task.task)}</span>
+                ${result ? statusBadge(result.status) : ''}
+              </div>
+              <h3 class="text-sm font-semibold text-gray-800 mt-0.5 leading-snug">${escapeHtml(task.title || task.task)}</h3>
+            </div>
+          </div>
+
+          <!-- Badges row -->
+          <div class="flex items-center gap-1.5 flex-wrap mt-1">
+            ${executorBadge(task.executor)}
+            ${isolationBadge(task.isolation)}
+          </div>
+
+          <!-- Files -->
+          ${task.files ? renderFiles(task.files) : ''}
+
+          <!-- Dependencies -->
+          ${task.depends_on ? renderDependencies(task.depends_on) : ''}
+
+          <!-- Result section (when results exist) -->
+          ${resultSection}
+
+          <!-- Acceptance criteria (collapsible) -->
+          ${task.acceptance ? `
+          <div class="mt-2 border-t border-gray-100 pt-2">
+            <button class="toggle-btn flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors" onclick="toggleAcceptance('${acceptanceId}', this)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              acceptance criteria
+            </button>
+            <div id="${acceptanceId}" class="acceptance-content mt-1 text-xs text-gray-500 bg-gray-50 rounded p-2 font-mono whitespace-pre-wrap">${escapeHtml(task.acceptance)}</div>
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // ─── Toggle handler ───────────────────────────────────────────────────────
+
+    function toggleAcceptance(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('open');
+      btn.classList.toggle('open');
+    }
+
+    // ─── Render ───────────────────────────────────────────────────────────────
+
+    function render() {
+      // Update header
+      document.getElementById('plan-name').textContent = planData.name || 'Plan';
+      document.getElementById('plan-date').textContent = planData.date ? `Generated: ${planData.date}` : '';
+      document.getElementById('stat-tasks').textContent = totalTasks;
+      document.getElementById('stat-batches').textContent = batchCount;
+      document.getElementById('stat-results').textContent = results.length > 0 ? `${results.length} results` : 'no results';
+
+      // Results indicator in header
+      if (results.length > 0) {
+        const successCount = results.filter(r => r.status === 'success').length;
+        const failedCount = results.filter(r => r.status === 'failed').length;
+        const partialCount = results.filter(r => r.status === 'partial').length;
+        document.getElementById('results-summary').innerHTML = `
+          <span class="text-green-300">${successCount} success</span>
+          ${partialCount > 0 ? `<span class="text-yellow-300">${partialCount} partial</span>` : ''}
+          ${failedCount > 0 ? `<span class="text-red-300">${failedCount} failed</span>` : ''}
+        `;
+        document.getElementById('results-summary').classList.remove('hidden');
+      }
+
+      // Render batch sections
+      const container = document.getElementById('batches-container');
+      container.innerHTML = '';
+
+      batchKeys.forEach(batchNum => {
+        const batchTasks = batches[batchNum];
+        const section = document.createElement('div');
+        section.className = 'mb-8';
+
+        const headerLabel = batchNum === 0 ? 'Batch —' : `Batch ${batchNum}`;
+        const parallelNote = batchTasks.length > 1 ? `<span class="text-xs text-gray-400 ml-2">${batchTasks.length} tasks run in parallel</span>` : '';
+
+        section.innerHTML = `
+          <div class="flex items-center gap-2 mb-3">
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">${escapeHtml(headerLabel)}</h2>
+            ${parallelNote}
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            ${batchTasks.map(renderCard).join('')}
+          </div>
+        `;
+
+        container.appendChild(section);
+      });
+    }
+
+    // Run on DOM ready
+    document.addEventListener('DOMContentLoaded', render);
+  </script>
+
+  <!-- ─── Layout ──────────────────────────────────────────────────────────── -->
+
+  <!-- Header -->
+  <header class="bg-gray-900 text-white shadow-lg">
+    <div class="max-w-screen-2xl mx-auto px-6 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h1 id="plan-name" class="text-xl font-bold text-white"></h1>
+          <p id="plan-date" class="text-sm text-gray-400 mt-0.5"></p>
+        </div>
+        <div class="flex items-center gap-6 text-sm text-gray-300 shrink-0">
+          <div class="text-center">
+            <div id="stat-tasks" class="text-2xl font-bold text-white">—</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">deliverables</div>
+          </div>
+          <div class="text-center">
+            <div id="stat-batches" class="text-2xl font-bold text-white">—</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">batches</div>
+          </div>
+          <div class="text-center">
+            <div id="stat-results" class="text-base font-semibold text-gray-300">—</div>
+            <div id="results-summary" class="hidden flex gap-2 text-xs mt-0.5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="max-w-screen-2xl mx-auto px-6 py-6">
+    <div id="batches-container"></div>
+  </main>
+
+</body>
+</html>

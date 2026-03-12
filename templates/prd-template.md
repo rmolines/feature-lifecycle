@@ -1,7 +1,12 @@
+---
+id: <slug>
+project: <project-alias>
+status: draft
+created: <date>
+updated: <date>
+tags: []
+---
 # PRD: <name>
-_Status: draft | final_
-_Project: <project> | new_
-_Last updated: <date>_
 
 ## Problem
 Who is affected, what hurts, why now.

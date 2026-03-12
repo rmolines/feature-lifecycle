@@ -290,11 +290,15 @@ git branch -D "worktree-$FEATURE" 2>/dev/null || true
 ### Archive discovery
 
 ```bash
-DISCOVERY_SRC="$HOME/.claude/discoveries/$REPO_NAME/$FEATURE"
-DISCOVERY_DST="$HOME/.claude/discoveries/$REPO_NAME/archived/$FEATURE"
-if [ -d "$DISCOVERY_SRC" ]; then
-  mkdir -p "$(dirname "$DISCOVERY_DST")"
-  mv "$DISCOVERY_SRC" "$DISCOVERY_DST"
+DISCOVERY_DIR="$HOME/.claude/discoveries/$REPO_NAME/$FEATURE"
+if [ -d "$DISCOVERY_DIR" ]; then
+  TODAY=$(date +%Y-%m-%d)
+  for file in "$DISCOVERY_DIR/prd.md" "$DISCOVERY_DIR/draft.md"; do
+    if [ -f "$file" ]; then
+      sed -i '' "s/^status: .*/status: archived/" "$file"
+      sed -i '' "s/^updated: .*/updated: $TODAY/" "$file"
+    fi
+  done
 fi
 ```
 
@@ -319,7 +323,7 @@ fi
 
 **Cleanup:**
 - Worktree: <removed | not applicable>
-- Discovery: archived to ~/.claude/discoveries/<repo>/archived/<feature>/
+- Discovery: status set to `archived` in frontmatter (~/.claude/discoveries/<repo>/<feature>/)
 
 Cycle closed. Next: /launchpad:discovery for the next feature.
 ```

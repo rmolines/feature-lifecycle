@@ -78,6 +78,28 @@ fi
   Read `.claude/project.md` and `CLAUDE.md` for project context.
 - **Outside a repo** → new project. Features live under `~/.claude/discoveries/<project>/`.
 
+### Check for vision context
+
+```bash
+# Resolve project name from argument (e.g. "ciclosp/mvp-mapa" → "ciclosp")
+PROJECT=$(echo "$ARGUMENTS" | cut -d'/' -f1)
+[ -z "$PROJECT" ] && PROJECT=$REPO_NAME
+VISION_PATH="$HOME/.claude/discoveries/$PROJECT/vision.md"
+```
+
+If `vision.md` exists at the project level, **read it before starting**. The vision
+provides strategic context that informs this feature's discovery:
+
+- **Thesis** — why this product exists (frames the feature's purpose)
+- **Milestones** — where this feature sits in the sequence (informs scope and dependencies)
+- **Strategy** — platform, distribution, monetization (informs technical decisions)
+- **Kill conditions** — project-level and milestone-level (may affect this feature)
+
+Use this context to calibrate framing depth and push back on scope creep. If the user
+proposes something that contradicts the vision, flag it:
+"The vision says X, but you're proposing Y — should we update the vision or adjust
+this feature's scope?"
+
 ### Parse arguments
 
 - Contains `/` → explicit `<project>/<feature>` path
@@ -93,25 +115,31 @@ When called with `--status`, or with no arguments and existing discoveries, show
 state of all features for the current project (or all projects if outside a repo):
 
 ```bash
-ls ~/.claude/discoveries/$REPO_NAME/*/draft.md ~/.claude/discoveries/$REPO_NAME/*/prd.md 2>/dev/null
+for f in ~/.claude/discoveries/$REPO_NAME/*/draft.md ~/.claude/discoveries/$REPO_NAME/*/prd.md; do
+  [ -f "$f" ] || continue
+  feature=$(basename "$(dirname "$f")")
+  status=$(grep "^status:" "$f" | head -1 | sed 's/^status: //')
+  project=$(grep "^project:" "$f" | head -1 | sed 's/^project: //')
+  echo "$feature  $status  $f"
+done
 ```
 
 Present as a summary:
 ```
 Portfolio: <project>
 
-  auth          prd.md ready    → next: /launchpad:planning auth
-  dashboard     draft.md        → 3 cycles done, 2 risks pending
-  billing       draft.md        → 1 cycle done (framing only)
-  onboarding    archived        → shipped
+  auth          final    → next: /launchpad:planning auth
+  dashboard     draft    → 3 cycles done, 2 risks pending
+  billing       draft    → 1 cycle done (framing only)
+  onboarding    archived → shipped
 
 What do you want to work on?
 ```
 
-State is determined by file presence:
+State is determined by YAML frontmatter `status:` field and file presence:
 - `archived/` → done
-- `prd.md` → ready for `/launchpad:planning`
-- `draft.md` → discovery in progress (show cycle count and pending risks)
+- `status: final` in `prd.md` → ready for `/launchpad:planning`
+- `status: draft` in `draft.md` → discovery in progress (show cycle count and pending risks)
 - Nothing → not started
 
 After showing the portfolio, ask what the user wants to do: resume an existing
@@ -124,9 +152,19 @@ When called with `--sketch`, skip all conversation and save a raw idea as a draf
 Usage: `/launchpad:discovery --sketch <slug> <one-liner idea>`
 
 1. Create `~/.claude/discoveries/$REPO_NAME/<slug>/draft.md` from the PRD template
-2. Fill **Problem** with the one-liner as-is (no refinement, no Socratic questioning)
-3. Leave everything else blank or minimal
-4. Set status to `draft`
+2. Add YAML frontmatter at the top of the file:
+   ```yaml
+   ---
+   id: <slug>
+   project: <REPO_NAME>
+   status: draft
+   created: <today YYYY-MM-DD>
+   updated: <today YYYY-MM-DD>
+   tags: []
+   ---
+   ```
+3. Fill **Problem** with the one-liner as-is (no refinement, no Socratic questioning)
+4. Leave everything else blank or minimal
 5. Confirm:
 ```
 Draft parked: <slug>
@@ -259,9 +297,19 @@ Write `cycles/01-framing-<desc>.md` with: risk investigated, method, discoveries
 identified risks for investigation.
 
 Create `draft.md` from the PRD template (`templates/prd-template.md`):
+- Add YAML frontmatter at the top:
+  ```yaml
+  ---
+  id: <feature-slug>
+  project: <REPO_NAME>
+  status: draft
+  created: <today YYYY-MM-DD>
+  updated: <today YYYY-MM-DD>
+  tags: []
+  ---
+  ```
 - Fill **Problem** with the crystallized formulation
 - Leave **Solution** and **Out-of-scope** as initial hypotheses or blank
-- Set status to `draft`
 
 Report state and suggest next cycle or `/clear`.
 
@@ -340,6 +388,7 @@ Update draft.md:
 - **Out-of-scope**: add items that were explicitly excluded
 - **Risks validated**: add row with the investigated risk
 - **Risks accepted**: move risks the human decided to accept
+- **YAML frontmatter**: update `updated: <today YYYY-MM-DD>` to reflect the modification date
 
 Report state: risks validated (N/M), pending risks, suggested next cycle.
 Recommend `/clear` if the session is getting long.
@@ -390,7 +439,10 @@ Do not generate the PRD.
 ### Generate prd.md
 
 If all 5 pass:
-- Copy draft.md to prd.md with status `final` and finalization date
+- Copy draft.md to prd.md
+- Update the YAML frontmatter in prd.md:
+  - `status: final`
+  - `updated: <today YYYY-MM-DD>`
 - Consolidate language (remove "we think", "it seems", hedging)
 - Ensure each section is self-contained (the `/launchpad:planning` agent reads this with zero context)
 
