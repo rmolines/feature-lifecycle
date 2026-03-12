@@ -205,6 +205,8 @@ validation_result: <output of validation command>
 files_changed: <list of paths>
 ```
 
+Track each deliverable's result in memory as it completes. You will need all results to write results.md after the final batch.
+
 **If `status: success`** — mark as complete, proceed.
 
 **If `status: partial`** — check if retry would help. If `retries < max_retries`,
@@ -282,6 +284,35 @@ Generate a list of what needs human validation:
 
 ---
 
+### Persist results
+
+After all batches complete and before generating the final report, write `results.md` to the feature's discovery directory:
+
+```bash
+~/.claude/discoveries/<repo>/<feature>/results.md
+```
+
+Use Schema 5 format (see `templates/schemas.md`). For each deliverable, write one block with the fields: `task`, `status`, `summary`, `files_changed`, `errors`, `validation_result`. Blocks are separated by blank lines.
+
+Include ALL deliverables — even skipped ones in amendment mode. For deliverables that were skipped, write:
+
+```
+task: D<N>
+status: skipped
+summary: Previously passing
+files_changed:
+errors:
+validation_result:
+```
+
+After writing results.md, generate the visual results view:
+
+```bash
+bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/discoveries/<repo>/<feature>/plan.md --results ~/.claude/discoveries/<repo>/<feature>/results.md
+```
+
+---
+
 ## Final report
 
 ```
@@ -326,6 +357,8 @@ Tests: X/Y passed
 
 Next step: /review <repo>/<feature>
 ```
+
+In amendment mode, skipped deliverables must also be written to results.md with `status: skipped` and `summary: Previously passing`. This ensures results.md is always a complete record of all deliverables regardless of amendment mode.
 
 After successful amendment delivery, **delete review.md** to clear the amendment flag:
 ```bash

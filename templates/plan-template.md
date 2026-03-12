@@ -168,37 +168,52 @@ _(no gate — deliverables don't touch critical infrastructure)_
 <!-- DAG format: one task per block, fields are key: value -->
 
 task: D1
+title: <short active title>
 depends_on:
 executor: sonnet
 isolation: worktree
+batch: 1
+files: src/path/to/file.ts, src/path/to/other.ts
 max_retries: 2
 acceptance: <build/test command> exits 0
 
 task: D2
+title: <short active title>
 depends_on: D1
 executor: sonnet
 isolation: worktree
+batch: 2
+files: src/path/to/file2.ts
 max_retries: 2
 acceptance: <build/test command> exits 0
 
 task: D3
+title: <short active title>
 depends_on:
 executor: haiku
 isolation: none
+batch: 1
+files: README.md, .env.example
 max_retries: 2
 acceptance: grep "<NEW_VAR>" .env.example returns the line
 
 task: D4
+title: <short active title>
 depends_on: D2
 executor: sonnet
 isolation: worktree
+batch: 2
+files: src/path/to/file3.ts
 max_retries: 2
 acceptance: <command> exits 0
 
 task: D5
+title: <short active title>
 depends_on: D2, D4
 executor: sonnet
 isolation: worktree
+batch: 3
+files: tests/integration/file.test.ts
 max_retries: 2
 acceptance: <command> exits 0
 

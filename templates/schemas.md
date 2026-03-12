@@ -68,30 +68,42 @@ Add this section to `plan.md` after `## Batches`:
 <!-- DAG format: one task per block, fields are key: value -->
 
 task: D1
+title: Set up JWT auth middleware
 depends_on:
 executor: haiku
 isolation: none
+batch: 1
+files: src/middleware/auth.ts, src/routes/index.ts
 max_retries: 2
 acceptance: npm test -- --testPathPattern=auth passes with 0 failures
 
 task: D2
+title: Add protected routes
 depends_on: D1
 executor: sonnet
 isolation: worktree
+batch: 2
+files: src/routes/protected.ts, tests/routes/protected.test.ts
 max_retries: 1
 acceptance: npm run build exits 0 and bundle size < 500kB
 
 task: M1
+title: Verify integration and regressions
 depends_on: D1, D2
 executor: sonnet
 isolation: worktree
+batch: 3
+files: tests/integration/auth.test.ts
 max_retries: 2
 acceptance: npm test exits 0, no regressions vs baseline
 
 task: D3
+title: Update documentation
 depends_on:
 executor: haiku
 isolation: none
+batch: 1
+files: README.md, docs/auth-setup.md
 max_retries: 3
 acceptance: migration runs without error on empty DB and on seed DB
 ```
@@ -101,9 +113,12 @@ acceptance: migration runs without error on empty DB and on seed DB
 | Field | Type | Rules |
 |---|---|---|
 | `task` | string | Unique deliverable ID. Must match IDs used in the Batches section. |
+| `title` | string | Short human-readable title for the deliverable (matches `### D<N> — <title>`). |
 | `depends_on` | string or empty | Comma-separated list of task IDs that must have `status: success` before this task runs. Leave empty for no dependencies (first batch). |
 | `executor` | enum | `haiku` (mechanical, well-scoped) / `sonnet` (reasoning required, integrations) |
 | `isolation` | enum | `worktree` (changes need isolation from main branch) / `none` (safe to work in current branch) |
+| `batch` | int | Which batch this task belongs to. Tasks in the same batch run in parallel. |
+| `files` | string | Comma-separated list of key files touched. Brief — for human overview, not exhaustive. |
 | `max_retries` | int | How many times orchestrator retries on `failed` before escalating. Typical range: 1–3. |
 | `acceptance` | string | The exact command or assertion used to validate completion. Must be runnable. |
 
@@ -135,6 +150,9 @@ get_field() {
 
 EXECUTOR=$(get_field D1 executor)
 DEPENDS=$(get_field D1 depends_on)
+TITLE=$(get_field D1 title)
+BATCH=$(get_field D1 batch)
+FILES=$(get_field D1 files)
 ACCEPTANCE=$(get_field D1 acceptance)
 ```
 
@@ -283,4 +301,195 @@ Items that the next phase must address. Each item is self-contained — the rece
 ### Parsing
 ```bash
 DECISION=$(grep "^decision:" review.md | awk '{print $2}')
+```
+
+---
+
+## Schema 5: Delivery Results (results.md)
+
+`/delivery` writes this file after all batches complete. It persists the per-deliverable results that would otherwise be lost when the chat session ends. Saved to `~/.claude/discoveries/<repo>/<feature>/results.md`.
+
+### Format
+
+```markdown
+task: D1
+status: success
+summary: Implemented JWT middleware and wired into Express router
+files_changed: src/middleware/auth.ts, src/routes/index.ts
+validation_result: 42 tests passed, 0 failed
+
+task: D2
+status: partial
+summary: Template updated but missing tags field
+files_changed: templates/prd-template.md
+errors: tags field not included in frontmatter
+validation_result: head -10 shows 5/6 fields
+
+task: D3
+status: failed
+summary: Migration script could not complete
+files_changed:
+errors: DB connection timeout, cannot reach seed DB
+validation_result: migration failed at step 2, rollback executed
+
+task: M1
+status: success
+summary: Verified integration and confirmed no regressions
+files_changed: tests/integration/auth.test.ts
+validation_result: all tests passed, coverage 94%
+```
+
+### Field rules
+
+| Field | Type | Rules |
+|---|---|---|
+| `task` | string | Matches a deliverable ID in the Execution DAG (e.g. `D1`, `D2`, `M1`) |
+| `status` | enum | `success` / `partial` / `failed` / `skipped` |
+| `summary` | string | Past tense, 1–2 sentences. What was done (or not done). |
+| `files_changed` | string or empty | Comma-separated paths. Empty if no files were touched. |
+| `errors` | string or empty | Description of what went wrong. Only when status != `success`. Leave empty otherwise. |
+| `validation_result` | string | Output of the acceptance command or summary of what was verified. |
+
+### Status semantics
+
+- **success** — validation passed, task is complete.
+- **partial** — core logic done but validation did not fully pass (e.g. 1 flaky test). May be retried or escalated to human.
+- **failed** — task could not be completed or validation failed after max_retries.
+- **skipped** — task was not run (e.g. because a dependency failed).
+
+### Parsing (grep/awk)
+
+```bash
+# Extract all task IDs and their status
+awk '/^task:/ {task=$2} /^status:/ {print task, $2}' results.md
+
+# Extract fields for a specific task (e.g. D1)
+get_result_field() {
+  local task_id=$1 field=$2
+  awk -v tid="$task_id" -v f="$field" '
+    /^task:/ { current = $2 }
+    current == tid && $0 ~ "^" f ":" { sub(/^[^:]+: ?/, ""); print; exit }
+  ' results.md
+}
+
+STATUS=$(get_result_field D1 status)
+SUMMARY=$(get_result_field D1 summary)
+ERRORS=$(get_result_field D1 errors)
+```
+
+---
+
+## Schema 6: Vision (vision.md)
+
+`/launchpad:vision` writes this file as the strategic layer above feature-level PRDs.
+It's consumed by the human (via mission control HTML) and by `/discovery` for context.
+Milestone status is **not** stored in vision.md — it's computed from the filesystem.
+
+### Format
+
+```markdown
+---
+id: <project-slug>
+status: draft | validated | active | paused | archived
+created: <YYYY-MM-DD>
+updated: <YYYY-MM-DD>
+tags: []
+---
+# Vision: <name>
+
+## Thesis
+<One falsifiable sentence: who, what hurts, why now>
+
+### Kill condition
+<What proves the thesis wrong>
+
+## Audience
+- **Primary:** <who and why>
+- **Secondary:** <who and why>
+
+## Milestones
+
+### M1: <name>
+- **Bet:** <hypothesis this milestone validates>
+- **Entry:** /launchpad:discovery <project>/<milestone-slug>
+- **Depends on:** <nothing or M-previous>
+- **Kill condition:** <what kills this milestone>
+
+### M2: <name>
+...
+
+## Strategy
+- **Platform:** <what and why>
+- **Monetization:** <how it sustains, even if "free for now">
+- **Distribution:** <how users find it>
+
+## Risks validated
+
+| Risk | Type | Method | Decision | Artifact |
+|---|---|---|---|---|
+| <risk> | market / technical / distribution / business | research / spike / analysis / interview | <decision> | cycles/<NN>-<type>-<desc>/ |
+
+## Risks accepted
+- <risk> — accepted because <reason>
+
+## Investigation cycles
+
+| # | Type | Description | Date |
+|---|---|---|---|
+| 01 | framing | <desc> | <date> |
+```
+
+### Field rules
+
+| Field | Rules |
+|---|---|
+| `id` | Project slug. Used in filesystem paths: `~/.claude/discoveries/<id>/` |
+| `status` | `draft` (in progress), `validated` (finalized), `active` (milestones being executed), `paused`, `archived` |
+| Milestone `Entry` | Must be a valid `/launchpad:discovery` command that the human can copy-paste |
+| Milestone `Depends on` | References other milestone IDs (M1, M2...) or empty for no dependencies |
+| Kill condition | Must be falsifiable — something that could actually be true |
+
+### Milestone status (computed, not stored)
+
+Milestone status is derived from the filesystem, not from vision.md:
+
+```bash
+PROJECT="ciclosp"
+for ms_dir in ~/.claude/discoveries/$PROJECT/*/; do
+  ms=$(basename "$ms_dir")
+  [ "$ms" = "cycles" ] && continue
+  if [ -d "$ms_dir/archived" ]; then echo "$ms: archived"
+  elif [ -f "$ms_dir/prd.md" ]; then echo "$ms: prd ready"
+  elif [ -f "$ms_dir/draft.md" ]; then echo "$ms: discovery in progress"
+  else echo "$ms: not started"
+  fi
+done
+```
+
+### Vision Quality Gate
+
+6 items, all must pass before `status: validated`:
+
+```
+Vision Quality Gate
+-------------------
+[ ] 1. Thesis is falsifiable (concrete condition that proves it wrong)
+[ ] 2. Kill condition is honest (not a strawman)
+[ ] 3. Milestones sequenced by risk (highest uncertainty earliest)
+[ ] 4. Each milestone has independent value (can stop after any one)
+[ ] 5. Strategy decisions are explicit (no TBDs)
+[ ] 6. Audience is specific enough to design for
+```
+
+### Parsing
+
+```bash
+# Read thesis
+THESIS=$(awk '/^## Thesis/{found=1; next} found && /^$/{exit} found{print}' vision.md | head -1)
+
+# Read status
+STATUS=$(grep "^status:" vision.md | head -1 | sed 's/^status: //')
+
+# List milestone slugs (from Entry field)
+MILESTONES=$(grep "^\- \*\*Entry:\*\*" vision.md | sed 's/.*discovery [^ ]*//' | awk -F'/' '{print $NF}')
 ```
