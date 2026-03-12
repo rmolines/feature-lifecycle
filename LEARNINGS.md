@@ -1,3 +1,8 @@
+## workspace-search
+
+- QMD's CLI query expansion (`qmd query "..."`) generates nonsensical expansions for Portuguese terms (e.g., "separada" → "separada 5 injuries"). This breaks single-string CLI queries for PT-BR content. Workaround: use MCP sub-queries with explicit `lex` + `vec` types instead of relying on the CLI's built-in expansion. The MCP path is the intended consumer anyway, but this is a trap for manual CLI debugging.
+- `claude mcp add --scope user` writes MCP server config to `~/.claude.json`, not `~/.claude/settings.json`. PRDs referencing "settings.json" for MCP config are technically wrong — the actual file is `~/.claude.json`. Both files exist but serve different purposes.
+
 ## domain-map
 
 - Bash-to-JS data contract (list vs. dict) is not caught by render tests. `domain-map.sh` emitted artifacts as a Python list; the JS template consumed it as a keyed object. The HTML rendered correctly (pipeline, phases, cards), so 7/8 success criteria passed. Only the criterion that accessed a specific key (`artifact["draft"]`) failed. Lesson: when a shell script produces JSON consumed by JS, add an explicit success criterion that reads a key from the emitted object — don't rely on visual render alone to validate data shape.

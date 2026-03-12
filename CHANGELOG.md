@@ -1,5 +1,11 @@
 # Changelog
 
+## workspace-search — 2026-03-12
+**Type:** feat
+**PRD:** ~/.claude/discoveries/fl/workspace-search/prd.md
+**Artifacts:** ~/.claude/scripts/workspace-preprocess.sh, ~/.claude/scripts/workspace-reindex.sh, ~/.claude/rules/workspace-search.md
+**Note:** Semantic search over workspace markdown artifacts via QMD + MCP. No repo code changes — scripts, configs, and rules live outside git. MCP server configured in ~/.claude.json.
+
 ## cockpit — 2026-03-12
 **Type:** feat
 **PRD:** ~/.claude/discoveries/fl/cockpit/prd.md
