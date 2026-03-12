@@ -29,3 +29,29 @@
 - Validate plan-view.sh against all 5 existing plan.md files end-to-end (the awk parser was validated but the full HTML pipeline was not smoke-tested on all of them).
 - Consider a `/results` skill that opens the HTML view for a past delivery without re-running delivery.
 - Kanban/cockpit view across all features is explicitly out-of-scope here but is a natural next feature once the YAML frontmatter on Bets is standardized.
+
+## domain-map — 2026-03-12
+
+**What:** HTML standalone que visualiza o pipeline de iniciativas do launchpad como view dinâmica com 8 fases, populada com instâncias reais do filesystem via schema-scan JSON.
+
+**Deliverables:**
+- schema.yml: added `results` and `reviews` tables + relationships
+- ~/.claude/templates/domain-map.html: pipeline view template (8 phases, cards, modal, dark theme)
+- ~/.claude/scripts/domain-map.sh: generation script (scan → compute phases → inject → browser)
+
+**Key decisions:**
+- Phase derived from filesystem artifacts, not manual status field
+- Artifacts as dict with booleans (fix from review: was list, caused modal bug)
+- Path co-location for relationships (bet/prd/plan/results/review share directory)
+
+**Pitfalls:**
+- artifacts_present() must return dict, not list — JS template indexes by string key
+
+**Next steps:**
+- fl/domain-model-v2: rename Bet→Iniciativa, derived status as ecosystem standard
+- fl/mission-control: integrate as tab in unified shell
+
+**Key files:**
+- ~/.claude/schema.yml (results + reviews tables)
+- ~/.claude/templates/domain-map.html
+- ~/.claude/scripts/domain-map.sh
