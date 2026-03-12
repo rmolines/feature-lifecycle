@@ -47,6 +47,29 @@ HOT_FILES=$(awk '/^## Hot files/{found=1; next} found && /^- /{print substr($0,3
 
 Fallback: `CLAUDE.md`. If neither found: ask the user for build/test commands.
 
+### Detect docs mode
+
+```bash
+SHIP_DOCS=$(grep "^ship-docs:" "$SPEC" 2>/dev/null | sed 's/^ship-docs: //' | head -1)
+
+if [ -z "$SHIP_DOCS" ]; then
+  # Auto-detect based on change size and file types
+  CODE_FILES=$(git diff origin/main...HEAD --name-only | grep -vE '\.(md|txt|json|yaml|yml)$' | wc -l | tr -d ' ')
+  if [ "$CODE_FILES" -eq 0 ] || [ "$LINES_CHANGED" -lt 50 ]; then
+    SHIP_DOCS="light"
+  else
+    SHIP_DOCS="full"
+  fi
+fi
+```
+
+Modes:
+- **`full`** — all 4 doc subagents (HANDOVER, CHANGELOG, LEARNINGS, CLAUDE.md pitfalls)
+- **`light`** — CHANGELOG entry only (1 subagent). Skips HANDOVER, LEARNINGS, pitfalls.
+- **`none`** — skip docs phase entirely
+
+Configurable via `ship-docs:` in `project.md`, or auto-detected if not set.
+
 ---
 
 ## Phase 1 — Build + test (hard gate)
@@ -216,7 +239,13 @@ If it fails: investigate logs before escalating.
 
 ---
 
-## Phase 5 — Documentation (parallel Sonnet subagents)
+## Phase 5 — Documentation
+
+**If `SHIP_DOCS=none`:** skip this phase entirely. Jump to Phase 6.
+
+**If `SHIP_DOCS=light`:** launch only Subagent B (CHANGELOG). Skip HANDOVER, LEARNINGS, pitfalls.
+
+**If `SHIP_DOCS=full`:** launch all 4 subagents in parallel.
 
 Collect before launching:
 - SHA of merge commit: `git log --oneline -5`
@@ -260,10 +289,10 @@ Launch 4 subagents in parallel:
 > If yes: propose the entry to the user for approval before writing.
 > If no: report "no new pitfalls."
 
-After all subagents complete, commit docs:
+After subagents complete, commit docs (only files that were actually updated):
 ```bash
-git add HANDOVER.md CHANGELOG.md LEARNINGS.md CLAUDE.md
-git commit -m "docs(<feature>): close cycle — HANDOVER, CHANGELOG, LEARNINGS
+git add -A -- HANDOVER.md CHANGELOG.md LEARNINGS.md CLAUDE.md 2>/dev/null
+git diff --cached --quiet || git commit -m "docs(<feature>): close cycle
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 git push origin main
@@ -315,11 +344,11 @@ fi
 
 **Simplify:** <what was improved, or "no changes needed">
 
-**Docs:**
-- HANDOVER.md — updated
+**Docs:** (mode: <full | light | none>)
 - CHANGELOG.md — updated
-- LEARNINGS.md — <updated | nothing new>
-- CLAUDE.md pitfalls — <updated | no new pitfalls>
+- HANDOVER.md — <updated | skipped (light mode)>
+- LEARNINGS.md — <updated | nothing new | skipped (light mode)>
+- CLAUDE.md pitfalls — <updated | no new pitfalls | skipped (light mode)>
 
 **Cleanup:**
 - Worktree: <removed | not applicable>

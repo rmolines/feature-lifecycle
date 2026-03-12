@@ -112,7 +112,7 @@ Check for:
 - Deliverables with self-contained prompts (if missing: `Warning: plan without subagent prompts — adapting`)
 - Circular dependencies (stop and report)
 - Deliverables without acceptance criteria (warn)
-- Missing gate points after D1 (warn)
+- Gate points in DAG (note: gates are opt-in — only pause where the plan explicitly sets gate: true)
 
 If critical inconsistencies found: report to the user before starting.
 
@@ -230,9 +230,13 @@ Do not attempt to fix it yourself. Do not continue to the next batch.
 **If the subagent returns narrative instead of structured result:** extract what you
 can (status, files changed) and proceed, but note the deviation.
 
-### Human gates
+### Human gates (opt-in)
 
-At points marked as gates in the plan:
+Gates only trigger at points where the Execution DAG explicitly sets `gate: true`.
+No implicit gates — not even after Batch 1. If the plan didn't flag a gate, delivery
+continues autonomously.
+
+When a gate triggers:
 
 ```
 ## Gate — Batch 1 complete
@@ -375,7 +379,7 @@ This prevents the next `/review` from seeing stale findings.
 | Plan is the contract | Execute faithfully. Don't add deliverables not in the plan. |
 | Parse the DAG | Read execution order from `## Execution DAG`, don't re-derive it. |
 | Baseline must pass | Never start on a broken codebase. |
-| Autonomous between gates | Don't pause between deliverables except at explicit gates. |
+| Gates are opt-in | Only pause at explicit `gate: true` in the DAG. No implicit gates, not even after D1. |
 | 2 retries max per deliverable | After 2 failures: stop and report. Don't fix indefinitely. |
 | Subagents don't spawn subagents | All orchestration from this thread. |
 | Sonnet by default | Never use opus in a subagent without explicit justification in the plan. |
