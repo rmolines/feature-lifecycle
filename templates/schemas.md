@@ -182,18 +182,20 @@ The goal is to produce PRDs that an agent can execute without making product dec
 
 ---
 
-### Item 2: Requirements are concrete
+### Item 2: Requirements are functional and cover the problem
 
-**Check:** Each requirement in `## Requirements` must reference a specific user action, system output, or measurable threshold — not a quality adjective. IDs use format R<N>.
+**Check:** Each requirement in `## Requirements` must describe an observable product behavior that a non-engineer can verify. IDs use format R<N>. No implementation details — technology names, framework references, or internal system names belong in Technical Specs, not Requirements.
+
+**Coverage check:** Every facet of the problem described in `## Problem` must be addressed by at least one requirement. If a facet has no corresponding R<N>, the PRD has a coverage gap.
 
 | | Example |
 |---|---|
-| **Fail** | "Onboarding should feel fast and intuitive" |
-| **Pass** | "R1: User completes profile setup in ≤ 3 steps without leaving the page" |
-| **Fail** | "The API should be reliable" |
-| **Pass** | "R2: Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests" |
+| **Fail** | "MCP server expõe tool create_document(type, project, slug, fields) com validação Zod" |
+| **Pass** | "Invalid documents are rejected with a specific error before being saved" |
+| **Fail** | "Hook pre_tool_call rejeita Write em ~/.claude/initiatives/" |
+| **Pass** | "No skill can write directly to the workspace — all writes go through validation" |
 
-**Validation prompt for `/discovery`:** Read each requirement in `## Requirements`. Does it have an R<N> ID and contain a verb + object + threshold? Remove all adjectives — does the sentence still have meaning?
+**Validation prompt for `/discovery`:** Read each requirement in `## Requirements`. (1) Can a non-engineer verify this by using the product? If not, it's a technical spec. (2) Map each facet of the Problem section to at least one R<N>. Any unmapped facet is a coverage gap.
 
 ---
 
@@ -227,16 +229,17 @@ The goal is to produce PRDs that an agent can execute without making product dec
 
 ---
 
-### Item 5: Technical context is included
+### Item 5: Technical Specs are included
 
-**Check:** The PRD must include enough context for the agent to make implementation decisions without researching the codebase from scratch.
+**Check:** The PRD must include a `## Technical Specs` section with enough implementation guidance for `/planning` to build deliverables without researching the codebase from scratch.
 
 Required context:
 
 - **Stack** — languages, frameworks, runtime versions relevant to this feature
-- **Patterns** — existing patterns the feature must follow (e.g. "all DB access goes through the repository layer in `src/db/`")
-- **Constraints** — anything the agent must not violate (e.g. "no new dependencies without approval", "must work without migrations in prod")
-- **Entry points** — where in the codebase the feature connects (files, modules, API routes)
+- **Patterns** — existing patterns the feature must follow
+- **Constraints** — anything the agent must not violate
+- **Entry points** — where in the codebase the feature connects
+- **Implementation notes** — specific technical decisions that guide the executor
 
 | | Example |
 |---|---|
@@ -253,10 +256,10 @@ Required context:
 PRD Quality Gate
 ----------------
 [ ] 1. Problem is falsifiable (measurable current state)
-[ ] 2. Requirements are concrete (R<N> IDs, verb + object + threshold)
+[ ] 2. Requirements are functional and cover the problem (R<N> IDs, stakeholder-verifiable, problem coverage)
 [ ] 3. Out-of-scope is specific (named things, not categories)
 [ ] 4. Design decisions are resolved (no TBDs, no open forks)
-[ ] 5. Technical context is included (stack, patterns, constraints, entry points)
+[ ] 5. Technical Specs are included (stack, patterns, constraints, entry points, implementation notes)
 
 Result: PASS (all 5) | FAIL (list failing items)
 ```

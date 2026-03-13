@@ -52,7 +52,9 @@ Run /launchpad:discovery to create a PRD before planning.
 
 ### Read context
 
-1. Read `prd.md` in full
+1. Read `prd.md` in full — pay special attention to:
+   - `## Requirements` — functional requirements (R<N>) that define the contract. These are what the review validates.
+   - `## Technical Specs` — implementation guidance (stack, patterns, constraints, entry points, technical decisions). Use this to inform deliverable prompts — it's the detail that used to live inside requirements.
 2. Read `.claude/project.md` or `CLAUDE.md` from the target repo — extract build command,
    test command, hot files, stack, branch conventions
 3. If none found: `Warning: no project config — using only the PRD as context`
@@ -259,6 +261,7 @@ Before finalizing each deliverable's prompt, verify:
 - [ ] Requests structured result format
 - [ ] If touching hot files: includes "read before editing" warning
 - [ ] Specifies which requirements (R<N>) this deliverable covers
+- [ ] Incorporates relevant Technical Specs from the PRD (stack, patterns, constraints, decisions)
 
 ---
 

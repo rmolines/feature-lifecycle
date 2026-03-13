@@ -388,11 +388,13 @@ Can you state a concrete condition that proves the problem is solved?
 Fail: "Users are frustrated with onboarding"
 Pass: "35% of signups abandon before completing profile setup (step 3 of 4)"
 
-**2. Requirements are concrete (R<N> format).**
-Each requirement must have an R<N> ID and reference a specific user action, system
-output, or measurable threshold. No quality adjectives.
-Fail: "Onboarding should feel fast and intuitive"
-Pass: "- **R1:** User completes profile setup in ≤ 3 steps without leaving the page"
+**2. Requirements are functional and cover the problem.**
+Each requirement must have an R<N> ID and describe an observable product behavior that
+a non-engineer can verify. No implementation details — technology names, frameworks, or
+internal system references belong in Technical Specs.
+Coverage: every facet of the Problem section must be addressed by at least one R<N>.
+Fail: "MCP server expõe tool create_document com validação Zod"
+Pass: "- **R1:** Invalid documents are rejected with a specific error before being saved"
 
 **3. Out-of-scope is specific enough.**
 Out-of-scope items must name the thing being excluded, not just the category.
@@ -404,9 +406,11 @@ down to 375px but native builds are not part of this feature."
 No TBDs, no "could X or Y", no open forks. Every product/UX decision is resolved.
 Search the draft for: "TBD", "to be decided", "could", "might", "option A/B".
 
-**5. Technical context is included.**
-Stack, patterns, constraints, entry points — enough for an agent to start
-implementing without researching the codebase from scratch.
+**5. Technical Specs are included.**
+Stack, patterns, constraints, entry points, implementation notes — enough for an agent
+to start implementing without researching the codebase from scratch. This section absorbs
+specific technical decisions (API designs, data models, integration patterns) that would
+otherwise pollute the functional Requirements.
 
 If any item fails: report which items failed with specific gaps found.
 Ask the human to resolve them — either through conversation now or another cycle.

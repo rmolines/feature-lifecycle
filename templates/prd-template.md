@@ -18,10 +18,16 @@ condition that proves the problem exists.
 
 ## Requirements
 
-Each requirement is the contract this feature must fulfill. Format: **R<N>:** verb + object + threshold. No quality adjectives — if you remove all adjectives the sentence must still have meaning.
+Functional requirements — the contract this feature must fulfill, written for the stakeholder.
+Each requirement describes an observable product behavior that a non-engineer can verify.
+Format: **R<N>:** verb + object + threshold. No implementation details — if you need to
+mention a technology, framework, or internal system name, it belongs in Technical Specs.
+
+Coverage test: for each facet of the problem described above, at least one requirement must
+address it. If a part of the problem has no requirement, the PRD has a gap.
 
 - **R1:** <e.g. "User completes profile setup in ≤ 3 steps without leaving the page">
-- **R2:** <e.g. "Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests">
+- **R2:** <e.g. "Invalid documents are rejected with a specific error before being saved">
 
 ## Solution
 Explain how the solution addresses the requirements (reference by ID).
@@ -44,14 +50,17 @@ The web app must be responsive down to 375px but native builds are not part of t
 - <item 1>
 - <item 2>
 
-## Technical context
+## Technical Specs
 
-Enough for an agent to start implementing without researching the codebase from scratch.
+Implementation guidance consumed by `/planning` to build deliverables. This is orientation,
+not a contract — if the executor finds a better technical path and the functional requirements
+still pass, the specs served their purpose. No formal IDs needed.
 
 - **Stack:** <languages, frameworks, runtime versions relevant to this feature>
 - **Patterns:** <existing patterns the feature must follow — e.g. "all DB access through repository layer in src/db/">
 - **Constraints:** <what the agent must not violate — e.g. "no new dependencies without approval">
 - **Entry points:** <where in the codebase the feature connects — files, modules, API routes>
+- **Implementation notes:** <specific technical decisions, API designs, data models, integration details that guide the executor>
 
 ## Risks validated
 
