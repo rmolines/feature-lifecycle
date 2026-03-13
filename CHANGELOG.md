@@ -1,5 +1,17 @@
 # Changelog
 
+## agent-design-system — PR #3 — 2026-03-12
+**Type:** feat
+**PRD:** ~/.claude/discoveries/agent-design-system/prd.md
+**Commit:** `git show 0f4c0dd`
+**Note:** Per-project design system convention — tokens + 5 HTML blocks (button, card, hero, nav, feature-row) for agent-driven UI composition. Templates in `templates/design-system/`, agent rule at `~/.claude/rules/design-system.md`.
+
+## domain-model-v2 — PR #2 — 2026-03-12
+**Type:** feat
+**PRD:** ~/.claude/discoveries/fl/domain-model-v2/prd.md
+**Commit:** `git show 0a73e92`
+**Decisions:** see LEARNINGS.md#domain-model-v2
+
 ## workspace-search — 2026-03-12
 **Type:** feat
 **PRD:** ~/.claude/discoveries/fl/workspace-search/prd.md
