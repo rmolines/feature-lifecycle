@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
+    background: #0f1117;
+    color: #cbd5e1;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f1117; }
+  ::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3d4a; }
+
+  /* ── Design tokens ───────────────────────────────────────────── */
+  .panel {
+    background: #0a0d16;
+    border: 1px solid #1e2235;
+    border-radius: 6px;
+  }
+
+  /* ── Status dots ─────────────────────────────────────────────── */
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .status-green { background: #22c55e; box-shadow: 0 0 5px #22c55e66; }
+  .status-red   { background: #ef4444; box-shadow: 0 0 5px #ef444466; }
+  .status-amber { background: #f59e0b; box-shadow: 0 0 5px #f59e0b66; }
+
+  /* ── Badge system ────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
+  .badge-draft    { background: #1e2235; color: #818cf8; border: 1px solid #312e6e; }
+  .badge-final    { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+  .badge-validated { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+  .badge-archived { background: #1a1a1a; color: #64748b; border: 1px solid #2a2a2a; }
+
+  .tag { display: inline-flex; align-items: center; padding: 0 5px; background: #131827; color: #475569; border: 1px solid #1e2235; border-radius: 3px; font-size: 10px; margin-right: 3px; }
+
+  /* ── Dep badge (milestone depends-on) ───────────────────────── */
+  .dep-badge { display: inline-flex; align-items: center; padding: 1px 6px; background: #1e2235; color: #a5b4fc; border: 1px solid #312e6e; border-radius: 3px; font-size: 10px; font-weight: 500; margin-right: 3px; }
+
+  /* ── Table rows ──────────────────────────────────────────────── */
+  .table-row { transition: background 0.1s; }
+  .table-row:hover { background: #1a1d2a; }
+
+  /* ── Copy button ─────────────────────────────────────────────── */
+  .copy-btn {
+    padding: 1px 6px;
+    font-size: 10px;
+    background: #1e2235;
+    color: #64748b;
+    border: 1px solid #2a2d3a;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .copy-btn:hover { color: #a5b4fc; border-color: #6366f1; background: #252a3a; }
+  .copy-btn.copied { color: #4ade80; border-color: #14532d; }
+
+  /* ── Collapsible (pending investigations) ────────────────────── */
+  .collapsible-content { display: none; }
+  .collapsible-content.open { display: block; }
+  .collapsible-btn svg { transition: transform 0.2s; }
+  .collapsible-btn.open svg { transform: rotate(180deg); }
+
+  /* ── Section headings ─────────────────────────────────────────── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #475569;
+  }
+
+  /* ── Milestone colors ────────────────────────────────────────── */
+  .milestone-card { border-left-width: 3px; border-left-style: solid; }
+  .ms-color-0 { border-left-color: #818cf8; }
+  .ms-color-1 { border-left-color: #60a5fa; }
+  .ms-color-2 { border-left-color: #22d3ee; }
+  .ms-color-3 { border-left-color: #fbbf24; }
+  .ms-color-4 { border-left-color: #4ade80; }
+</style>
+</head>
+<body class="min-h-screen bg-[#0f1117] text-slate-300">
+
+<!-- Data injected by vision-view.sh -->
+<script id="vision-data-raw" type="application/json">__VISION_DATA__</script>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────────────
+const V = JSON.parse(document.getElementById('vision-data-raw').textContent);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function milestoneColor(idx) {
+  const colors = ['#818cf8', '#60a5fa', '#22d3ee', '#fbbf24', '#4ade80'];
+  return colors[idx % colors.length];
+}
+
+function statusBadgeClass(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'draft') return 'badge-draft';
+  if (s === 'validated' || s === 'final') return 'badge-validated';
+  if (s === 'archived') return 'badge-archived';
+  return 'badge-draft';
+}
+
+function copyToClipboard(text, btnEl) {
+  // Use textarea fallback for file:// protocol where navigator.clipboard is blocked
+  function onSuccess() {
+    btnEl.classList.add('copied');
+    btnEl.textContent = 'copied';
+    setTimeout(() => {
+      btnEl.classList.remove('copied');
+      btnEl.textContent = 'copy';
+    }, 1500);
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    onSuccess();
+  }
+}
+
+function toggleCollapsible(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+// ─── Render header ────────────────────────────────────────────────────────────
+function renderHeader() {
+  // Title
+  document.getElementById('vision-id').textContent = V.id || 'vision';
+
+  // Status badge
+  const badgeEl = document.getElementById('vision-status');
+  badgeEl.className = `badge ${statusBadgeClass(V.status)}`;
+  badgeEl.textContent = V.status || 'draft';
+
+  // Created date
+  document.getElementById('vision-created').textContent = V.created || '';
+
+  // Tags
+  const tagsEl = document.getElementById('vision-tags');
+  const tags = V.tags || [];
+  tagsEl.innerHTML = tags.map(t => `<span class="tag">${esc(t)}</span>`).join('');
+}
+
+// ─── Render thesis ────────────────────────────────────────────────────────────
+function renderThesis() {
+  document.getElementById('thesis-text').textContent = V.thesis || '';
+  document.getElementById('kill-condition-text').textContent = V.kill_condition || '—';
+}
+
+// ─── Render audience ─────────────────────────────────────────────────────────
+function renderAudience() {
+  document.getElementById('audience-primary').textContent = V.audience?.primary || '—';
+  document.getElementById('audience-secondary').textContent = V.audience?.secondary || '—';
+}
+
+// ─── Render milestones ────────────────────────────────────────────────────────
+function renderMilestones() {
+  const container = document.getElementById('milestones-container');
+  const milestones = V.milestones || [];
+
+  if (milestones.length === 0) {
+    container.innerHTML = '<p class="text-slate-600 text-xs">No milestones defined.</p>';
+    return;
+  }
+
+  container.innerHTML = milestones.map((ms, idx) => {
+    const color = milestoneColor(idx);
+    const colorClass = `ms-color-${idx}`;
+
+    // Depends on badges
+    const depsStr = ms.depends_on || '';
+    let depsHtml = '';
+    if (depsStr && depsStr !== 'nada' && depsStr !== '') {
+      const deps = depsStr.split('+').map(d => d.trim()).filter(Boolean);
+      if (deps.length > 0) {
+        depsHtml = `
+          <div class="flex items-center gap-1 flex-wrap mt-1">
+            <span class="text-[10px] text-slate-600 uppercase tracking-wide">depends on</span>
+            ${deps.map(d => `<span class="dep-badge">${esc(d)}</span>`).join('')}
+          </div>`;
+      }
+    }
+
+    // Blockers
+    let blockersHtml = '';
+    if (ms.blockers && ms.blockers.length > 0) {
+      blockersHtml = `
+        <div class="mt-2">
+          <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Blockers</div>
+          <ul class="space-y-0.5">
+            ${ms.blockers.map(b => `
+              <li class="flex items-start gap-1.5 text-xs">
+                ${b.checked
+                  ? `<span class="mt-px" style="color:#22c55e">✓</span><span class="text-slate-500 line-through">${esc(b.text)}</span>`
+                  : `<span class="mt-px text-amber-500">○</span><span class="text-slate-400">${esc(b.text)}</span>`
+                }
+              </li>`).join('')}
+          </ul>
+        </div>`;
+    }
+
+    // Entry command
+    let entryHtml = '';
+    if (ms.entry) {
+      const entryId = `entry-btn-${ms.id}`;
+      entryHtml = `
+        <div class="flex items-center gap-2 mt-1">
+          <span class="font-mono text-xs text-indigo-300">${esc(ms.entry)}</span>
+          <button id="${entryId}" class="copy-btn" data-copy="${esc(ms.entry)}">copy</button>
+        </div>`;
+    }
+
+    // Kill condition
+    let killHtml = '';
+    if (ms.kill_condition) {
+      killHtml = `
+        <div class="flex items-start gap-1.5 mt-1.5">
+          <span class="status-dot status-red mt-1 flex-shrink-0"></span>
+          <span class="text-xs" style="color:#f87171">${esc(ms.kill_condition)}</span>
+        </div>`;
+    }
+
+    return `
+      <div class="panel milestone-card ${colorClass} p-4">
+        <div class="flex items-start gap-3">
+          <span class="font-bold text-sm shrink-0" style="color:${color}">${esc(ms.id)}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-slate-200 font-medium text-sm">${esc(ms.name)}</div>
+            ${ms.description ? `<div class="text-slate-400 text-xs mt-0.5 leading-relaxed">${esc(ms.description)}</div>` : ''}
+          </div>
+        </div>
+
+        ${ms.bet ? `
+        <div class="mt-2">
+          <span class="text-xs italic text-slate-400">${esc(ms.bet)}</span>
+        </div>` : ''}
+
+        ${entryHtml}
+        ${depsHtml}
+        ${killHtml}
+        ${blockersHtml}
+      </div>`;
+  }).join('');
+}
+
+// ─── Render strategy ─────────────────────────────────────────────────────────
+function renderStrategy() {
+  document.getElementById('strategy-platform').textContent = V.strategy?.platform || '—';
+  document.getElementById('strategy-monetization').textContent = V.strategy?.monetization || '—';
+  document.getElementById('strategy-distribution').textContent = V.strategy?.distribution || '—';
+}
+
+// ─── Render risks validated ───────────────────────────────────────────────────
+function renderRisksValidated() {
+  const container = document.getElementById('risks-validated-table');
+  const risks = V.risks_validated || [];
+
+  if (risks.length === 0) {
+    container.innerHTML = '<p class="text-slate-600 text-xs px-3 py-2">No validated risks.</p>';
+    return;
+  }
+
+  container.innerHTML = risks.map(r => `
+    <tr class="table-row border-t border-[#1e2235]">
+      <td class="px-3 py-2 text-xs text-slate-300 align-top">${esc(r.risk)}</td>
+      <td class="px-3 py-2 text-xs text-indigo-400 align-top whitespace-nowrap">${esc(r.type)}</td>
+      <td class="px-3 py-2 text-xs text-slate-500 align-top whitespace-nowrap">${esc(r.method)}</td>
+      <td class="px-3 py-2 text-xs text-slate-400 align-top">${esc(r.decision)}</td>
+      <td class="px-3 py-2 text-xs text-slate-600 align-top font-mono">${esc(r.artifact)}</td>
+    </tr>`).join('');
+}
+
+// ─── Render risks accepted ────────────────────────────────────────────────────
+function renderRisksAccepted() {
+  const container = document.getElementById('risks-accepted-list');
+  const risks = V.risks_accepted || [];
+
+  if (risks.length === 0) {
+    container.innerHTML = '<p class="text-slate-600 text-xs">None.</p>';
+    return;
+  }
+
+  container.innerHTML = `<ul class="space-y-1">${risks.map(r => `
+    <li class="flex items-start gap-2 text-xs text-slate-400">
+      <span class="status-dot status-amber mt-1 flex-shrink-0"></span>
+      <span>${esc(r)}</span>
+    </li>`).join('')}</ul>`;
+}
+
+// ─── Render pending investigations ───────────────────────────────────────────
+function renderPendingInvestigations() {
+  const container = document.getElementById('pending-container');
+  const pendings = V.pending_investigations || [];
+
+  if (pendings.length === 0) {
+    container.style.display = 'none';
+    document.getElementById('pending-section').style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = pendings.map((p, idx) => {
+    const contentId = `pending-content-${idx}`;
+    const btnId = `pending-btn-${idx}`;
+    // Convert basic markdown to readable text
+    const contentHtml = esc(p.content).replace(/\n/g, '<br>');
+    return `
+      <div class="panel">
+        <button id="${btnId}" class="collapsible-btn w-full flex items-center justify-between px-4 py-3 text-left hover:bg-[#1a1d2a] transition-colors rounded-[6px]" onclick="toggleCollapsible('${contentId}', this)">
+          <div class="flex items-center gap-2">
+            <span class="status-dot status-amber flex-shrink-0"></span>
+            <span class="text-xs font-mono text-amber-400">${esc(p.number)}</span>
+            <span class="text-sm text-slate-300">${esc(p.title)}</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div id="${contentId}" class="collapsible-content px-4 pb-4">
+          <div class="text-xs text-slate-400 leading-relaxed border-t border-[#1e2235] pt-3 font-mono whitespace-pre-wrap">${contentHtml}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── Render investigation cycles ──────────────────────────────────────────────
+function renderCycles() {
+  const container = document.getElementById('cycles-table');
+  const cycles = V.cycles || [];
+
+  if (cycles.length === 0) {
+    container.innerHTML = '<tr><td colspan="4" class="px-3 py-2 text-xs text-slate-600">No cycles recorded.</td></tr>';
+    return;
+  }
+
+  container.innerHTML = cycles.map(c => `
+    <tr class="table-row border-t border-[#1e2235]">
+      <td class="px-3 py-2 text-xs font-mono text-slate-500 whitespace-nowrap">${esc(c.number)}</td>
+      <td class="px-3 py-2 text-xs text-indigo-400 whitespace-nowrap">${esc(c.type)}</td>
+      <td class="px-3 py-2 text-xs text-slate-400">${esc(c.description)}</td>
+      <td class="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">${esc(c.date)}</td>
+    </tr>`).join('');
+}
+
+// ─── Main render ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderHeader();
+  renderThesis();
+  renderAudience();
+  renderMilestones();
+  renderStrategy();
+  renderRisksValidated();
+  renderRisksAccepted();
+  renderPendingInvestigations();
+  renderCycles();
+
+  // Delegated click handler for copy buttons (avoids quote escaping issues in inline onclick)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-copy]');
+    if (btn) copyToClipboard(btn.getAttribute('data-copy'), btn);
+  });
+});
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     LAYOUT
+═══════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Header bar -->
+<header class="border-b border-[#1e2235] bg-[#0a0d16]">
+  <div class="max-w-[900px] mx-auto px-6 py-3">
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-indigo-400 font-semibold text-sm">vision://</span>
+        <span id="vision-id" class="text-slate-200 text-sm font-medium"></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="vision-status" class="badge badge-draft"></span>
+        <span id="vision-created" class="text-xs text-slate-500"></span>
+      </div>
+    </div>
+    <div class="mt-1.5" id="vision-tags"></div>
+  </div>
+</header>
+
+<!-- Main content -->
+<main class="max-w-[900px] mx-auto px-6 py-6 space-y-6">
+
+  <!-- Thesis panel -->
+  <div class="panel p-5" style="border-left: 3px solid #6366f1;">
+    <div class="section-label mb-2">Thesis</div>
+    <p id="thesis-text" class="text-[14px] text-slate-200 leading-relaxed"></p>
+    <div class="mt-4 pt-3 border-t border-[#1e2235]">
+      <div class="flex items-start gap-2">
+        <span class="status-dot status-red mt-1 flex-shrink-0"></span>
+        <div>
+          <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-0.5">Kill condition</div>
+          <p id="kill-condition-text" class="text-xs leading-relaxed" style="color:#f87171"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audience panel -->
+  <div class="panel p-5">
+    <div class="section-label mb-3">Audience</div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Primary</div>
+        <p id="audience-primary" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Secondary</div>
+        <p id="audience-secondary" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Milestones section -->
+  <div>
+    <div class="section-label mb-3">Milestones</div>
+    <div id="milestones-container" class="space-y-3"></div>
+  </div>
+
+  <!-- Strategy panel -->
+  <div class="panel p-5">
+    <div class="section-label mb-3">Strategy</div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Platform</div>
+        <p id="strategy-platform" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Monetization</div>
+        <p id="strategy-monetization" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-wide text-slate-600 mb-1">Distribution</div>
+        <p id="strategy-distribution" class="text-xs text-slate-300 leading-relaxed"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risks section -->
+  <div>
+    <div class="section-label mb-3">Risks</div>
+
+    <!-- Validated risks -->
+    <div class="panel mb-3">
+      <div class="px-4 pt-4 pb-2">
+        <div class="flex items-center gap-1.5 mb-2">
+          <span class="status-dot status-green"></span>
+          <span class="text-xs text-slate-500">Validated</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-t border-[#1e2235]">
+              <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Risk</th>
+              <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Type</th>
+              <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Method</th>
+              <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Decision</th>
+              <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Artifact</th>
+            </tr>
+          </thead>
+          <tbody id="risks-validated-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Accepted risks -->
+    <div class="panel p-4">
+      <div class="flex items-center gap-1.5 mb-2">
+        <span class="status-dot status-amber"></span>
+        <span class="text-xs text-slate-500">Accepted</span>
+      </div>
+      <div id="risks-accepted-list"></div>
+    </div>
+  </div>
+
+  <!-- Pending investigations section -->
+  <div id="pending-section">
+    <div class="section-label mb-3">Pending Investigations</div>
+    <div id="pending-container" class="space-y-2"></div>
+  </div>
+
+  <!-- Investigation cycles section -->
+  <div>
+    <div class="section-label mb-3">Investigation Cycles</div>
+    <div class="panel">
+      <table class="w-full text-xs">
+        <thead>
+          <tr>
+            <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">#</th>
+            <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Type</th>
+            <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Description</th>
+            <th class="px-3 py-2 text-left text-[10px] uppercase tracking-wide text-slate-600 font-medium">Date</th>
+          </tr>
+        </thead>
+        <tbody id="cycles-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

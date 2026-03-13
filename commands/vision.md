@@ -1,6 +1,6 @@
 ---
 description: "Strategic layer above discovery. Transforms a product idea into a validated vision with sequenced milestones that feed into /launchpad:discovery."
-argument-hint: "slug, idea, --sketch <slug> <idea>, --finalize, or --status"
+argument-hint: "slug, idea, --finalize, or --status"
 ---
 
 # /launchpad:vision
@@ -30,7 +30,7 @@ level (will this feature work?). Vision reduces risk at the product level:
 - Can we sustain this? (business model risk)
 
 The output is a `vision.md` — a declarative roadmap that the human consumes visually
-(via mission control HTML) to decide which milestone to attack next. Each milestone
+(via vision-view.sh HTML visualization) to decide which milestone to attack next. Each milestone
 links to a `/discovery` entry.
 
 **Vision is not consumed by agents.** It's consumed by the human to make strategic
@@ -78,7 +78,6 @@ project root, milestones are subdirectories:
 ### Parse arguments
 
 - Simple slug → project name. Look for `~/.claude/discoveries/<slug>/vision.md`
-- `--sketch <slug> <idea>` → quick draft mode (see below)
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view
 - Empty → show portfolio view if visions exist, then ask what to explore
@@ -117,22 +116,8 @@ Also show milestone status for each vision by checking filesystem:
     M4 launch        not started   → /launchpad:discovery ciclosp/launch
 ```
 
-### Quick draft mode (`--sketch`)
-
-Usage: `/launchpad:vision --sketch <slug> <one-liner idea>`
-
-1. Create `~/.claude/discoveries/<slug>/vision.md` from template (`templates/vision-template.md`)
-2. Fill **Thesis** with the one-liner as-is
-3. Leave everything else blank
-4. Confirm:
-```
-Vision draft parked: <slug>
-Resume later: /launchpad:vision <slug>
-```
-
 ### Route
 
-- **`--sketch` flag** → quick draft mode. No conversation.
 - **`vision.md` exists with `status: draft`** → resume. Read vision, list completed cycles,
   ask which risk to tackle next.
 - **`vision.md` exists with `status: validated`** → already finalized.
@@ -150,7 +135,7 @@ identify strategic risks.
 
 | Signal level | Mode | What you do |
 |---|---|---|
-| Vague ("I want to build an app for X") | **Extraction** | Socratic — one question at a time to find the real bet |
+| Vague ("I want to build an app for X") | **Extraction** | Socratic — one question at a time to find the real hypothesis |
 | Formed hypothesis ("cyclists in SP need better route info") | **Validation** | Propose your reading of the thesis, ask for confirmation |
 | Data/research already done | **Synthesis** | Analyze, find gaps, propose structure |
 
@@ -176,7 +161,7 @@ the design target).
 
 Propose an initial milestone sequence. Each milestone should:
 - **Deliver value independently** — if you stop after M1, something useful exists
-- **Validate a specific hypothesis** — each milestone has its own bet
+- **Validate a specific hypothesis** — each milestone has its own hypothesis
 - **Have a clear dependency chain** — what must exist before this can be built
 - **Have its own kill condition** — what proves this milestone shouldn't be built
 
@@ -222,7 +207,7 @@ Instead, record it as a blocker on the relevant milestone:
 
 ```markdown
 ### M1: MVP Mapa + Roteamento
-- **Bet:** ...
+- **Hypothesis:** ...
 - **Entry:** /launchpad:discovery ciclosp/mvp-mapa
 - **Depends on:** nada
 - **Kill condition:** dados GeoSampa não servem pra roteamento
@@ -245,6 +230,12 @@ Create `vision.md` from template (`templates/vision-template.md`):
 - Fill **Milestones** with initial sketch
 - Fill **Strategy** with hypotheses
 - Leave risks tables for investigation
+
+After saving vision.md, generate the HTML visualization:
+```bash
+bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+```
+This opens the vision in the browser for human review.
 
 Report state and suggest next cycle or `/clear`.
 
@@ -292,12 +283,17 @@ When: business model, platform choice, build-vs-buy, sequencing trade-offs.
 ### After every cycle
 
 Update vision.md:
-- **Thesis**: refine if the cycle changed the core bet
+- **Thesis**: refine if the cycle changed the core hypothesis
 - **Milestones**: add/remove/reorder if the cycle revealed new information
 - **Strategy**: update decisions that were validated or invalidated
 - **Risks validated**: add row
 - **Risks accepted**: move risks the human decided to accept
 - **YAML frontmatter**: update `updated: <today YYYY-MM-DD>`
+
+After updating vision.md, regenerate the HTML visualization:
+```bash
+bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+```
 
 Report state: risks validated (N/M), pending risks, suggested next cycle.
 Recommend `/clear` if the session is getting long.
@@ -353,6 +349,11 @@ If all 6 pass:
 - Consolidate language (remove hedging)
 - Ensure milestones have correct entry commands
 
+Generate the final HTML visualization:
+```bash
+bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+```
+
 ### Close
 
 Report: thesis (one line), milestones (count), risks validated (count),
@@ -389,6 +390,7 @@ Recommend `/clear` before continuing.
 
 ## When NOT to use
 
+- Quick vision idea capture (no conversation needed) → use `/draft`
 - Single feature in existing project → use `/launchpad:discovery` directly
 - Bug/fix → use `/debug` or `/fix`
 - Already have a vision, need a PRD → use `/launchpad:discovery <project>/<milestone>`
