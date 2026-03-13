@@ -74,6 +74,7 @@ executor: haiku
 isolation: none
 batch: 1
 files: src/middleware/auth.ts, src/routes/index.ts
+requirements: R1, R2
 max_retries: 2
 acceptance: npm test -- --testPathPattern=auth passes with 0 failures
 
@@ -119,6 +120,7 @@ acceptance: migration runs without error on empty DB and on seed DB
 | `isolation` | enum | `worktree` (changes need isolation from main branch) / `none` (safe to work in current branch) |
 | `batch` | int | Which batch this task belongs to. Tasks in the same batch run in parallel. |
 | `files` | string | Comma-separated list of key files touched. Brief — for human overview, not exhaustive. |
+| `requirements` | string or empty | Comma-separated list of requirement IDs from the PRD (e.g. R1, R3). Optional — omit if not applicable. |
 | `max_retries` | int | How many times orchestrator retries on `failed` before escalating. Typical range: 1–3. |
 | `acceptance` | string | The exact command or assertion used to validate completion. Must be runnable. |
 
@@ -154,6 +156,7 @@ TITLE=$(get_field D1 title)
 BATCH=$(get_field D1 batch)
 FILES=$(get_field D1 files)
 ACCEPTANCE=$(get_field D1 acceptance)
+REQUIREMENTS=$(get_field D1 requirements)
 ```
 
 ---
@@ -179,18 +182,18 @@ The goal is to produce PRDs that an agent can execute without making product dec
 
 ---
 
-### Item 2: Success criteria are concrete
+### Item 2: Requirements are concrete
 
-**Check:** Each criterion must reference a specific user action, system output, or measurable threshold — not a quality adjective.
+**Check:** Each requirement in `## Requirements` must reference a specific user action, system output, or measurable threshold — not a quality adjective. IDs use format R<N>.
 
 | | Example |
 |---|---|
 | **Fail** | "Onboarding should feel fast and intuitive" |
-| **Pass** | "User completes profile setup in ≤ 3 steps without leaving the page" |
+| **Pass** | "R1: User completes profile setup in ≤ 3 steps without leaving the page" |
 | **Fail** | "The API should be reliable" |
-| **Pass** | "Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests" |
+| **Pass** | "R2: Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests" |
 
-**Validation prompt for `/discovery`:** Read each success criterion. Does it contain a verb + object + threshold? Remove all adjectives — does the sentence still have meaning?
+**Validation prompt for `/discovery`:** Read each requirement in `## Requirements`. Does it have an R<N> ID and contain a verb + object + threshold? Remove all adjectives — does the sentence still have meaning?
 
 ---
 
@@ -250,7 +253,7 @@ Required context:
 PRD Quality Gate
 ----------------
 [ ] 1. Problem is falsifiable (measurable current state)
-[ ] 2. Success criteria are concrete (user action + threshold, no adjectives)
+[ ] 2. Requirements are concrete (R<N> IDs, verb + object + threshold)
 [ ] 3. Out-of-scope is specific (named things, not categories)
 [ ] 4. Design decisions are resolved (no TBDs, no open forks)
 [ ] 5. Technical context is included (stack, patterns, constraints, entry points)
@@ -278,10 +281,10 @@ _Diff analyzed: <git ref range>_
 decision: approved | back-to-delivery | back-to-planning | back-to-discovery
 reason: <1-2 sentence justification>
 
-## Success Criteria Status
+## Requirements Status
 | Criterion | Status | Note |
 |-----------|--------|------|
-| <criterion text> | PASS / PARTIAL / FAIL | <evidence or gap> |
+| R1: <requirement text> | PASS / PARTIAL / FAIL | <evidence or gap> |
 
 ## Action Items
 Items that the next phase must address. Each item is self-contained — the receiving skill should be able to act on it without session context.

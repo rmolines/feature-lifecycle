@@ -388,11 +388,11 @@ Can you state a concrete condition that proves the problem is solved?
 Fail: "Users are frustrated with onboarding"
 Pass: "35% of signups abandon before completing profile setup (step 3 of 4)"
 
-**2. Success criteria are concrete.**
-Each criterion must reference a specific user action, system output, or measurable
-threshold — not a quality adjective.
+**2. Requirements are concrete (R<N> format).**
+Each requirement must have an R<N> ID and reference a specific user action, system
+output, or measurable threshold. No quality adjectives.
 Fail: "Onboarding should feel fast and intuitive"
-Pass: "User completes profile setup in ≤ 3 steps without leaving the page"
+Pass: "- **R1:** User completes profile setup in ≤ 3 steps without leaving the page"
 
 **3. Out-of-scope is specific enough.**
 Out-of-scope items must name the thing being excluded, not just the category.

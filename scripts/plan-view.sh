@@ -91,11 +91,11 @@ build_tasks_json() {
   echo "$dag_text" | awk '
     BEGIN {
       task=""; title=""; depends_on=""; executor=""; isolation=""
-      batch="0"; files=""; max_retries="0"; acceptance=""
+      batch="0"; files=""; max_retries="0"; acceptance=""; requirements=""
       has_task=0
     }
 
-    function flush_block(   t,ti,d,e,iso,b,f,mr,ac) {
+    function flush_block(   t,ti,d,e,iso,b,f,mr,ac,rq) {
       if (!has_task) return
       t = task
       ti = (title == "") ? task : title
@@ -106,6 +106,7 @@ build_tasks_json() {
       f = files
       mr = (max_retries == "") ? "0" : max_retries
       ac = acceptance
+      rq = requirements
 
       # Escape double quotes
       gsub(/"/, "\\\"", t)
@@ -115,19 +116,20 @@ build_tasks_json() {
       gsub(/"/, "\\\"", iso)
       gsub(/"/, "\\\"", f)
       gsub(/"/, "\\\"", ac)
+      gsub(/"/, "\\\"", rq)
 
       # Validate batch and max_retries are numeric
       if (b !~ /^[0-9]+$/) b = "0"
       if (mr !~ /^[0-9]+$/) mr = "0"
 
       print "TASK_START"
-      print "{\"task\":\"" t "\",\"title\":\"" ti "\",\"depends_on\":\"" d "\",\"executor\":\"" e "\",\"isolation\":\"" iso "\",\"batch\":" b ",\"files\":\"" f "\",\"max_retries\":" mr ",\"acceptance\":\"" ac "\"}"
+      print "{\"task\":\"" t "\",\"title\":\"" ti "\",\"depends_on\":\"" d "\",\"executor\":\"" e "\",\"isolation\":\"" iso "\",\"batch\":" b ",\"files\":\"" f "\",\"max_retries\":" mr ",\"acceptance\":\"" ac "\",\"requirements\":\"" rq "\"}"
     }
 
     /^$/ {
       flush_block()
       task=""; title=""; depends_on=""; executor=""; isolation=""
-      batch="0"; files=""; max_retries="0"; acceptance=""
+      batch="0"; files=""; max_retries="0"; acceptance=""; requirements=""
       has_task=0
       next
     }
@@ -146,9 +148,30 @@ build_tasks_json() {
     /^files:/ { sub(/^files:[[:space:]]*/, ""); files = $0; next }
     /^max_retries:/ { sub(/^max_retries:[[:space:]]*/, ""); max_retries = $0; next }
     /^acceptance:/ { sub(/^acceptance:[[:space:]]*/, ""); acceptance = $0; next }
+    /^requirements:/ { sub(/^requirements:[[:space:]]*/, ""); requirements = $0; next }
 
     END { flush_block() }
   '
+}
+
+# ─── Parse Requirements section from plan.md ─────────────────────────────────
+
+parse_requirements() {
+  local file="$1"
+  awk '
+    BEGIN { in_req = 0 }
+    /^## Requirements/ { in_req = 1; next }
+    in_req && /^## / { in_req = 0; next }
+    in_req && /^---/ { in_req = 0; next }
+    in_req && /^- \*\*R[0-9]+:\*\*/ {
+      id = $0; text = $0
+      sub(/^- \*\*/, "", id); sub(/:.*/, "", id)
+      sub(/^- \*\*R[0-9]+:\*\* */, "", text)
+      gsub(/"/, "\\\"", text)
+      print "REQ_START"
+      print "{\"id\":\"" id "\",\"text\":\"" text "\"}"
+    }
+  ' "$file"
 }
 
 DAG_TEXT=$(parse_dag "$PLAN_FILE")
@@ -170,6 +193,27 @@ while IFS= read -r line; do
   fi
 done <<< "$TASK_BLOCKS"
 TASKS_JSON+="]"
+
+# Build requirements JSON array
+REQ_BLOCKS=$(parse_requirements "$PLAN_FILE")
+REQUIREMENTS_JSON="[]"
+if [[ -n "$REQ_BLOCKS" ]]; then
+  REQUIREMENTS_JSON="["
+  first_req=1
+  while IFS= read -r line; do
+    if [[ "$line" == "REQ_START" ]]; then
+      continue
+    fi
+    if [[ "$line" == {* ]]; then
+      if [[ $first_req -eq 0 ]]; then
+        REQUIREMENTS_JSON+=","
+      fi
+      REQUIREMENTS_JSON+="$line"
+      first_req=0
+    fi
+  done <<< "$REQ_BLOCKS"
+  REQUIREMENTS_JSON+="]"
+fi
 
 # ─── Parse results.md (optional) ─────────────────────────────────────────────
 
@@ -231,7 +275,7 @@ fi
 PLAN_NAME_ESC=$(json_escape "$PLAN_NAME")
 PLAN_DATE_ESC=$(json_escape "$PLAN_DATE")
 
-PLAN_JSON="{\"name\":\"${PLAN_NAME_ESC}\",\"date\":\"${PLAN_DATE_ESC}\",\"tasks\":${TASKS_JSON},\"results\":${RESULTS_JSON}}"
+PLAN_JSON="{\"name\":\"${PLAN_NAME_ESC}\",\"date\":\"${PLAN_DATE_ESC}\",\"tasks\":${TASKS_JSON},\"results\":${RESULTS_JSON},\"requirements\":${REQUIREMENTS_JSON}}"
 
 # ─── Inject into HTML template ───────────────────────────────────────────────
 
