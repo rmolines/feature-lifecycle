@@ -1,5 +1,11 @@
 # Changelog
 
+## GTM Skill — PR #8 — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/discoveries/fl/gtm/prd.md
+**Commit:** `git show 148239e`
+**What:** New `/launchpad:gtm` command — quarterly playbook, weekly plans with retrospectives, daily briefs. Single command, filesystem-routed. Also includes `discoveries/` → `initiatives/` path migration across all skills.
+
 ## requirements-as-contract — PR #7 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/discoveries/launchpad/requirements-as-contract/prd.md
