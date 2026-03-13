@@ -53,7 +53,7 @@ ls ~/.claude/discoveries/$REPO_NAME/*/prd.md 2>/dev/null
 
 ### Load context (in parallel)
 
-- Read `prd.md` — focus on: Problem, Solution, Out-of-scope, success criteria
+- Read `prd.md` — focus on: Problem, Requirements, Solution, Out-of-scope
 - Read `plan.md` — focus on: deliverable list, acceptance criteria, D naming
 - `git diff origin/main...HEAD` — committed changes on the branch
 - `git diff HEAD` — uncommitted changes
@@ -109,12 +109,12 @@ Agent(
 > - MISSING — required by the PRD but not found in the diff
 > - OUT_OF_SCOPE_VIOLATION — implements something explicitly excluded
 >
-> **2. Success criteria**
-> List each success criterion from the PRD and evaluate:
-> - PASS — evidence in the diff that the criterion is met
+> **2. Requirements**
+> List each requirement (R<N>) from the PRD and evaluate individually:
+> - PASS — evidence in the diff that the requirement is met
 > - PARTIAL — some evidence but incomplete
 > - FAIL — no evidence or contradicting evidence
-> - UNTESTABLE — criterion cannot be verified from the diff alone
+> - UNTESTABLE — requirement cannot be verified from the diff alone
 >
 > **3. Deliverable coverage**
 > Map each deliverable from the plan against the diff:
@@ -138,7 +138,7 @@ Agent(
 > ## Evaluation
 >
 > problem_alignment: aligned | drift | mixed
-> success_criteria_pass_rate: N/M
+> requirements_pass_rate: N/M
 > deliverable_coverage: N/M complete
 > out_of_scope_violated: yes | no
 >
@@ -147,10 +147,10 @@ Agent(
 > |--------|---------------|------|
 > | <change> | ALIGNED | <how it maps to the PRD> |
 >
-> ### Success criteria
-> | Criterion | Status | Evidence |
-> |-----------|--------|----------|
-> | <criterion> | PASS | <where in the diff> |
+> ### Requirements
+> | Requirement | Status | Evidence |
+> |-------------|--------|----------|
+> | R<N>: <requirement text> | PASS | <where in the diff> |
 >
 > ### Deliverable coverage
 > | Deliverable | Status | Note |
@@ -177,13 +177,13 @@ recommends; you decide. Consider the evaluator's analysis but apply your own jud
 ### Decision framework
 
 **Approved for ship** when:
-- Success criteria pass rate is high (most PASS, maybe 1 PARTIAL on non-critical)
+- Requirements pass rate is high (most PASS, maybe 1 PARTIAL on non-critical)
 - No out-of-scope violations
 - Problem alignment is aligned or mixed with acceptable extras
 - Evaluator concerns are minor or cosmetic
 
 **Back to delivery** when:
-- Success criteria have FAILs on important items
+- Requirements have FAILs on important items
 - Deliverables are MISSING or PARTIAL
 - Problem alignment shows DRIFT on core functionality
 - No out-of-scope violations (those go back to planning)
@@ -215,9 +215,9 @@ the detailed analysis.
 ### Summary
 <2-3 sentences: what was evaluated, what the evaluator found, why this decision>
 
-### Success criteria: N/M passing (P PARTIAL, U UNTESTABLE)
+### Requirements: N/M passing (P PARTIAL, U UNTESTABLE)
 Count only PASS as "passing". Show PARTIAL and UNTESTABLE counts in parentheses.
-<only list items that are not PASS — the user doesn't need to see what's working>
+<only list requirements that are not PASS — the user doesn't need to see what's working>
 
 ### Issues requiring action
 <only if back to delivery or planning — specific, actionable items>
@@ -247,10 +247,10 @@ _Diff analyzed: <git ref range, e.g. origin/main...HEAD>_
 decision: <approved | back-to-delivery | back-to-planning | back-to-discovery>
 reason: <1-2 sentence justification>
 
-## Success Criteria Status
-| Criterion | Status | Note |
-|-----------|--------|------|
-| <criterion text> | PASS / PARTIAL / FAIL / UNTESTABLE | <evidence or gap> |
+## Requirements Status
+| Requirement | Status | Note |
+|-------------|--------|------|
+| R<N>: <requirement text> | PASS / PARTIAL / FAIL / UNTESTABLE | <evidence or gap> |
 
 ## Action Items
 - <specific, actionable item with file paths where relevant>

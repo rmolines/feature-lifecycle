@@ -103,7 +103,7 @@ something bigger (a whole product, multiple independent flows, etc.).
 
 **Signs the PRD is too broad:**
 - Problem statement uses "and" to connect unrelated concerns
-- Success criteria span multiple independent user flows
+- Requirements span multiple independent user flows
 - You'd need 9+ deliverables to cover everything
 - The solution section describes what's really 3+ features
 
@@ -206,6 +206,7 @@ Each deliverable follows this structure:
 **Executor:** sonnet | haiku
 **Isolation:** worktree | none
 **Depends on:** none | D<X> | D<X>, D<Y>
+**Requirements:** R<N>, R<M>
 **Files touched:**
 - `path/to/file1`
 - `path/to/file2`
@@ -244,6 +245,8 @@ Each deliverable follows this structure:
 **Acceptance:** `<command>` → <what must pass>
 ```
 
+Each deliverable must reference which requirements from the PRD it addresses using R<N> IDs. This enables requirement traceability in the plan-view.
+
 ### Prompt quality checklist
 
 Before finalizing each deliverable's prompt, verify:
@@ -255,6 +258,7 @@ Before finalizing each deliverable's prompt, verify:
 - [ ] Has a runnable validation command with expected output
 - [ ] Requests structured result format
 - [ ] If touching hot files: includes "read before editing" warning
+- [ ] Specifies which requirements (R<N>) this deliverable covers
 
 ---
 
@@ -297,6 +301,7 @@ See `templates/schemas.md` for the full format.
 task: D1
 title: Walking skeleton — end-to-end integration
 depends_on:
+requirements: R1, R2
 executor: sonnet
 isolation: worktree
 batch: 1
@@ -309,6 +314,7 @@ acceptance: npm test exits 0
 task: D2
 title: Environment variable scaffolding
 depends_on:
+requirements: R1, R2
 executor: haiku
 isolation: none
 batch: 1
@@ -320,6 +326,7 @@ acceptance: grep "NEW_VAR" .env.example returns the line
 task: D3
 title: New API endpoint with integration test
 depends_on: D1
+requirements: R1, R3
 executor: sonnet
 isolation: worktree
 batch: 2

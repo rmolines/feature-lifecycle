@@ -16,16 +16,15 @@ Must be **falsifiable**: include a measurable current state (metric, user action
 frequency) that the solution will change. Not "users are frustrated" — state the concrete
 condition that proves the problem exists.
 
+## Requirements
+
+Each requirement is the contract this feature must fulfill. Format: **R<N>:** verb + object + threshold. No quality adjectives — if you remove all adjectives the sentence must still have meaning.
+
+- **R1:** <e.g. "User completes profile setup in ≤ 3 steps without leaving the page">
+- **R2:** <e.g. "Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests">
+
 ## Solution
-What to build, how it solves the problem.
-
-### Success criteria
-
-Each criterion must reference a specific **user action, system output, or measurable threshold**.
-No quality adjectives. Each criterion should contain: verb + object + threshold.
-
-- [ ] <criterion 1 — e.g. "User completes profile setup in ≤ 3 steps without leaving the page">
-- [ ] <criterion 2 — e.g. "Endpoint returns 200 in < 300ms at p95 under 100 concurrent requests">
+Explain how the solution addresses the requirements (reference by ID).
 
 ### Design decisions
 

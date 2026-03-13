@@ -2,6 +2,12 @@
 _PRD: ~/.claude/discoveries/<repo>/<name>/prd.md_
 _Generated on: <date>_
 
+## Requirements
+_Copied from PRD — the contract this plan must fulfill._
+
+- **R1:** <requirement text>
+- **R2:** <requirement text>
+
 ## Problem
 <Problem description — extracted directly from the PRD. One paragraph that describes what
 is being solved and for whom. Used by the executor to verify alignment during execution.>
@@ -15,6 +21,7 @@ is being solved and for whom. Used by the executor to verify alignment during ex
 **Executor:** sonnet
 **Isolation:** worktree
 **Depends on:** none
+**Requirements:** R1, R2
 **Files touched:**
 - `~/git/<repo>/src/path/to/file.ts`
 - `~/git/<repo>/src/path/to/other.ts`
@@ -61,6 +68,7 @@ is being solved and for whom. Used by the executor to verify alignment during ex
 **Executor:** sonnet
 **Isolation:** worktree
 **Depends on:** D1
+**Requirements:** R1
 **Files touched:**
 - `~/git/<repo>/src/path/to/file2.ts`
 
@@ -102,6 +110,7 @@ is being solved and for whom. Used by the executor to verify alignment during ex
 **Executor:** haiku
 **Isolation:** none
 **Depends on:** none
+**Requirements:** R2
 **Files touched:**
 - `~/git/<repo>/README.md`
 - `~/git/<repo>/.env.example`
@@ -174,6 +183,7 @@ executor: sonnet
 isolation: worktree
 batch: 1
 files: src/path/to/file.ts, src/path/to/other.ts
+requirements: R1, R2
 max_retries: 2
 acceptance: <build/test command> exits 0
 
@@ -184,6 +194,7 @@ executor: sonnet
 isolation: worktree
 batch: 2
 files: src/path/to/file2.ts
+requirements: R1
 max_retries: 2
 acceptance: <build/test command> exits 0
 
@@ -194,6 +205,7 @@ executor: haiku
 isolation: none
 batch: 1
 files: README.md, .env.example
+requirements: R2
 max_retries: 2
 acceptance: grep "<NEW_VAR>" .env.example returns the line
 
@@ -204,6 +216,7 @@ executor: sonnet
 isolation: worktree
 batch: 2
 files: src/path/to/file3.ts
+requirements:
 max_retries: 2
 acceptance: <command> exits 0
 
@@ -214,6 +227,7 @@ executor: sonnet
 isolation: worktree
 batch: 3
 files: tests/integration/file.test.ts
+requirements:
 max_retries: 2
 acceptance: <command> exits 0
 
