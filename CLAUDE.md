@@ -62,6 +62,25 @@ will silently under-count. Always use `parsed["cost"]` for cost, and replicate t
 `format_session_report` pattern (main usage + iterate `subagent_summaries`) for token
 totals.
 
+### `updateStatusCache` writes `status:` to draft.md but `DraftSchema` doesn't declare it
+`status.ts` → `updateStatusCache()` reads `draft.md`, sets `doc.data.status = status`,
+and writes it back. Every MCP tool that mutates state (create, finalize, add_cycle)
+writes a `status:` key into `draft.md` frontmatter.
+
+However, `DraftSchema` has no `status` field. Zod strips unknown keys from validated
+output, but `init_update_fields` serializes the merged raw object (not the validated
+output), so `status:` persists on disk. Two failure modes:
+
+1. An agent reads `draft.md` frontmatter and trusts `status:` — gets a cached,
+   potentially stale value instead of the live filesystem-derived status.
+2. `init_update_fields` merges incoming fields over `parsed.data` (which includes
+   cached `status:`), validates with Zod (which strips it), but then serializes the
+   raw merged object (which retains it).
+
+Rule: never read `status:` from `draft.md` frontmatter. Always call `init_get_status`
+or `deriveStatus()`. Do not assume `init_update_fields` strips unknown frontmatter
+fields.
+
 ### `parse_requirements` in plan-view.sh silently drops requirements on format mismatch
 The awk parser in `scripts/plan-view.sh` only recognises requirement lines matching
 exactly `- **R<N>:** <text>`. Any deviation — missing bold markers (`- R1: text`),
