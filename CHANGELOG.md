@@ -1,5 +1,13 @@
 # Changelog
 
+## portfolio-review — PR #6 — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/discoveries/fl/portfolio-review/prd.md
+**Commit:** `git show 2fc8480`
+**Decisions:** see LEARNINGS.md#portfolio-review
+
+New `/portfolio-review` skill with 5 phases: panorama, strategic map, conversation, execution, review log. Scans all discoveries, detects overlaps via QMD, applies taxonomy actions (matar, consolidar, promover, pausar, decompor), persists review log. Plugin version bumped to 0.7.0. ship.md updated with plugin version bump automation.
+
 ## Session Analyzer — PR #5 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/discoveries/fl/session-analyzer/prd.md
