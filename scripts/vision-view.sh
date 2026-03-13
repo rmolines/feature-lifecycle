@@ -4,17 +4,7 @@
 
 set -euo pipefail
 
-VISION_FILE=""
-
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    *)
-      VISION_FILE="$1"
-      shift
-      ;;
-  esac
-done
+VISION_FILE="${1:-}"
 
 if [[ -z "$VISION_FILE" ]]; then
   echo "Usage: bash $0 <vision.md>" >&2

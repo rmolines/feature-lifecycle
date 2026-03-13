@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/rmolines/git/launchpad/scripts/guard-initiatives.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

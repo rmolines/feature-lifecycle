@@ -1,0 +1,8 @@
+{
+  "initiatives": {
+    "type": "stdio",
+    "command": "/Users/rmolines/.bun/bin/bun",
+    "args": ["src/index.ts"],
+    "cwd": "${CLAUDE_PLUGIN_ROOT}"
+  }
+}
