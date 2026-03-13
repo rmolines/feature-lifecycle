@@ -130,6 +130,21 @@ If simplify introduced failures: revert simplify changes and proceed without the
 
 ## Phase 3 — Commit + PR
 
+### Plugin version bump
+
+If any files in `commands/` or `.claude-plugin/` were added or modified, bump the
+patch version in `.claude-plugin/plugin.json` before committing. New or modified
+skills won't appear in Claude Code without a version bump.
+
+```bash
+# Check if commands or plugin config changed
+PLUGIN_CHANGES=$(git diff origin/main...HEAD --name-only | grep -E '^(commands/|\.claude-plugin/)' | wc -l | tr -d ' ')
+if [ "$PLUGIN_CHANGES" -gt 0 ]; then
+  # Bump patch version in .claude-plugin/plugin.json (e.g. 0.6.0 → 0.6.1)
+  # Read current version, increment patch segment, write back
+fi
+```
+
 ### Detect path
 
 ```bash
