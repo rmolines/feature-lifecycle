@@ -56,6 +56,42 @@
 - ~/.claude/templates/domain-map.html
 - ~/.claude/scripts/domain-map.sh
 
+## domain-model-v2 — 2026-03-12
+
+**What:** O domain model do launchpad havia crescido organicamente, acumulando inconsistências: o conceito "Bet" não comunicava o pipeline de entrega, o `status:` manual no frontmatter criava duas fontes de verdade junto com a lógica derivada já presente no cockpit.sh, e a flag `--sketch` estava acoplada a skills que não deveriam criar drafts. Este PRD formalizou o domain model com 6 mudanças: rename Bet→Initiative, status derivado dos artefatos como fonte canônica, /draft como skill separada de captura rápida, campos `priority:` e `supersedes:` no frontmatter, e absorção do query-layer restante nos templates e skills.
+
+**Key decisions:**
+- `derive_status()` extraída como script compartilhado (`scripts/derive-status.sh`) sourced por cockpit.sh e disponível para todas as skills — elimina a duplicação entre `determine_phase()` e o campo manual.
+- `status:` removido do frontmatter de draft.md e prd.md sem fallback/cache — status derivado é a única fonte de verdade. vision.md é exceção: lifecycle de visão não é derivável de artefatos.
+- `/draft` é skill nova (não refactor de `--sketch`) — UX de bloco de notas com máximo 2 perguntas, discovery e vision apenas consomem drafts.
+- `supersedes:` é unidirecional — v2 aponta para v1, v1 não referencia v2. Simplicidade sem grafo bidirecional.
+- Rename usa "Initiative" em inglês (não "Iniciativa") para consistência com o codebase.
+- `bet_counts` → `initiative_counts` no JSON output do cockpit.sh + cockpit.html — breaking change da API interna.
+- ship.md muda de `sed status: archived` para `mv` do diretório para `archived/` — derive_status detecta o path pai.
+
+**Pitfalls discovered:**
+- Nenhum novo pitfall além dos já documentados no CLAUDE.md (`__COCKPIT_DATA__` e `__PLAN_DATA__` como placeholders que não podem aparecer em conteúdo de artefatos).
+- Artifacts existentes ficam com `status:` stale no frontmatter até cleanup orgânico — campo é ignorado por derive_status, inconsistência temporária aceita.
+
+**Next steps:**
+- Executar D1+D2 em paralelo (derive-status.sh + cockpit refactor, rename Bet→Initiative em docs/templates).
+- Gate humano: verificar lógica de derive_status.sh e spot-check thesis.md para "Initiative".
+- Executar D3+D4+D5 em paralelo (draft skill, discovery/vision updates, ship archival).
+- Migração incremental dos ~24 artifacts existentes que têm `status:` no frontmatter (não via script — cleanup nos próximos deliverables).
+
+**Key files:**
+- `~/git/launchpad/scripts/derive-status.sh` (novo — D1)
+- `~/git/launchpad/scripts/cockpit.sh` (refatorado — D1)
+- `~/git/launchpad/templates/cockpit.html` (bet_counts → initiative_counts — D1)
+- `~/git/launchpad/commands/draft.md` (novo — D3)
+- `~/git/launchpad/templates/prd-template.md` (remove status:, adiciona priority: e supersedes: — D3)
+- `~/git/launchpad/commands/discovery.md` (remove --sketch, para de escrever status: — D4)
+- `~/git/launchpad/commands/vision.md` (remove --sketch — D4)
+- `~/git/launchpad/commands/ship.md` (mv para archived/ em vez de sed — D5)
+- `~/git/launchpad/docs/thesis.md`, `docs/contracts.md`, `README.md` (rename — D2)
+- `~/git/launchpad/templates/schemas.md`, `templates/vision-template.md` (rename — D2)
+- `~/.claude/rules/ecosystem-map.md` (bet → initiative — D2)
+
 ## cockpit — 2026-03-12
 
 **What:** 5 HTMLs temáticos (schema-explorer, domain-map, bowl, plan-view, cockpit.md) existiam isolados sem navegação entre si e sem ponto central de acesso. O usuário criava artefatos que depois não conseguia encontrar ou usar. Esta feature unifica tudo em um único `cockpit.html` com 5 abas funcionais, populado por um `cockpit.sh` que escaneia `~/.claude/discoveries/` via grep/awk sem dependência de LLM.
