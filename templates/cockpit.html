@@ -439,9 +439,9 @@ function renderOverview() {
           <span class="text-slate-500 text-xs ml-auto">${p.total || 0} total</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          ${(p.bet_counts || {}).draft ? `<span class="badge badge-draft">${p.bet_counts.draft} draft</span>` : ''}
-          ${(p.bet_counts || {}).final ? `<span class="badge badge-final">${p.bet_counts.final} final</span>` : ''}
-          ${(p.bet_counts || {}).archived ? `<span class="badge badge-archived">${p.bet_counts.archived} archived</span>` : ''}
+          ${(p.initiative_counts || {}).draft ? `<span class="badge badge-draft">${p.initiative_counts.draft} draft</span>` : ''}
+          ${(p.initiative_counts || {}).final ? `<span class="badge badge-final">${p.initiative_counts.final} final</span>` : ''}
+          ${(p.initiative_counts || {}).archived ? `<span class="badge badge-archived">${p.initiative_counts.archived} archived</span>` : ''}
         </div>
       </div>
     `).join('');

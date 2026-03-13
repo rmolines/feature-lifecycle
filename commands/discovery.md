@@ -1,6 +1,6 @@
 ---
 description: "Iterative risk reduction that produces an agent-ready PRD. Transforms a vague idea into a validated PRD through conversation and investigation cycles."
-argument-hint: "slug, idea, --sketch <slug> <idea>, --finalize, or --status"
+argument-hint: "slug, idea, --finalize, or --status"
 ---
 
 # /launchpad:discovery
@@ -26,14 +26,14 @@ Discovery is a **risk reduction engine**. You're eliminating two kinds of risk:
 - Human knows but can't articulate → propose interpretations, ask "does this capture it?"
 - You misunderstood the intent → validate your understanding before building on it
 
-**Bet risks** — handled as explicit investigation cycles:
+**Initiative risks** — handled as explicit investigation cycles:
 - The idea might be bad → kill conditions, competitive research
 - Technical feasibility → spikes, proof of concepts
 - Usability → mockups, prototype testing
 - Business viability → market research, analysis
 
 Communication risks are not steps to follow. They're awareness you carry throughout
-every interaction. Bet risks become documented cycles that reduce uncertainty before
+every interaction. Initiative risks become documented cycles that reduce uncertainty before
 committing code.
 
 ---
@@ -104,7 +104,6 @@ this feature's scope?"
 
 - Contains `/` → explicit `<project>/<feature>` path
 - Simple slug → feature name (inside detected project) or project name (outside repo)
-- `--sketch <slug> <idea>` → quick draft mode (see below)
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view (see below)
 - Empty → show portfolio view if discoveries exist, then ask what to explore
@@ -115,12 +114,18 @@ When called with `--status`, or with no arguments and existing discoveries, show
 state of all features for the current project (or all projects if outside a repo):
 
 ```bash
-for f in ~/.claude/discoveries/$REPO_NAME/*/draft.md ~/.claude/discoveries/$REPO_NAME/*/prd.md; do
-  [ -f "$f" ] || continue
-  feature=$(basename "$(dirname "$f")")
-  status=$(grep "^status:" "$f" | head -1 | sed 's/^status: //')
-  project=$(grep "^project:" "$f" | head -1 | sed 's/^project: //')
-  echo "$feature  $status  $f"
+for dir in ~/.claude/discoveries/$REPO_NAME/*/; do
+  [ -d "$dir" ] || continue
+  feature=$(basename "$dir")
+  if [ -f "$dir/review.md" ] && grep -q "^decision: approved" "$dir/review.md"; then status="approved"
+  elif [ -f "$dir/results.md" ]; then status="done"
+  elif [ -f "$dir/plan.md" ]; then status="planned"
+  elif [ -f "$dir/prd.md" ]; then status="ready"
+  elif [ -d "$dir/cycles" ]; then status="exploring"
+  elif [ -f "$dir/draft.md" ]; then status="seed"
+  else status="not started"
+  fi
+  echo "$feature  $status"
 done
 ```
 
@@ -128,58 +133,28 @@ Present as a summary:
 ```
 Portfolio: <project>
 
-  auth          final    → next: /launchpad:planning auth
-  dashboard     draft    → 3 cycles done, 2 risks pending
-  billing       draft    → 1 cycle done (framing only)
-  onboarding    archived → shipped
+  auth          ready      → next: /launchpad:planning auth
+  dashboard     exploring  → 3 cycles done, 2 risks pending
+  billing       seed       → framing only
+  onboarding    done       → shipped
 
 What do you want to work on?
 ```
 
-State is determined by YAML frontmatter `status:` field and file presence:
-- `archived/` → done
-- `status: final` in `prd.md` → ready for `/launchpad:planning`
-- `status: draft` in `draft.md` → discovery in progress (show cycle count and pending risks)
+State is determined by filesystem artifacts:
+- `review.md` with `decision: approved` → approved
+- `results.md` exists → done
+- `plan.md` exists → planned
+- `prd.md` exists → ready (next: `/launchpad:planning`)
+- `cycles/` directory exists → exploring
+- `draft.md` exists → seed
 - Nothing → not started
 
 After showing the portfolio, ask what the user wants to do: resume an existing
 discovery, start a new one, or finalize one that's ready.
 
-### Quick draft mode (`--sketch`)
-
-When called with `--sketch`, skip all conversation and save a raw idea as a draft.
-
-Usage: `/launchpad:discovery --sketch <slug> <one-liner idea>`
-
-1. Create `~/.claude/discoveries/$REPO_NAME/<slug>/draft.md` from the PRD template
-2. Add YAML frontmatter at the top of the file:
-   ```yaml
-   ---
-   id: <slug>
-   project: <REPO_NAME>
-   status: draft
-   created: <today YYYY-MM-DD>
-   updated: <today YYYY-MM-DD>
-   tags: []
-   ---
-   ```
-3. Fill **Problem** with the one-liner as-is (no refinement, no Socratic questioning)
-4. Leave everything else blank or minimal
-5. Confirm:
-```
-Draft parked: <slug>
-Resume later: /launchpad:discovery <slug>
-```
-
-That's it. No framing, no risk identification, no cycles. The user will come back
-with `/launchpad:discovery <slug>` when ready to go deeper.
-
-If the slug already has a `draft.md`: append the idea to the Problem section
-(accumulate notes) and confirm: `"Added to existing draft: <slug>"`
-
 ### Route
 
-- **`--sketch` flag** → quick draft mode (above). No conversation.
 - **`draft.md` exists** → resume. Read draft, list completed cycles, ask which risk to tackle next.
 - **`review.md` exists with `decision: back-to-discovery`** → amendment mode. Read `review.md`
   and the existing `prd.md`. Present the review findings to the user:
@@ -302,9 +277,10 @@ Create `draft.md` from the PRD template (`templates/prd-template.md`):
   ---
   id: <feature-slug>
   project: <REPO_NAME>
-  status: draft
   created: <today YYYY-MM-DD>
   updated: <today YYYY-MM-DD>
+  priority: medium
+  supersedes:
   tags: []
   ---
   ```
@@ -441,7 +417,6 @@ Do not generate the PRD.
 If all 5 pass:
 - Copy draft.md to prd.md
 - Update the YAML frontmatter in prd.md:
-  - `status: final`
   - `updated: <today YYYY-MM-DD>`
 - Consolidate language (remove "we think", "it seems", hedging)
 - Ensure each section is self-contained (the `/launchpad:planning` agent reads this with zero context)
@@ -475,6 +450,7 @@ Next step: `/launchpad:planning <slug>`. Recommend `/clear` before continuing.
 
 ## When NOT to use
 
+- Quick idea capture (no conversation needed) → use `/draft`
 - Bug/fix → use `/debug` or `/fix`
 - Code already written, just needs PR → use `/launchpad:review`
 - Plan already exists, just execute → use `/launchpad:delivery`

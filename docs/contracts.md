@@ -16,7 +16,7 @@ Discovery is a risk reduction engine. Risks come in two flavors:
   - Human knows but can't articulate (translation)
   - LLM misunderstood (interpretation validation)
 
-- **Bet risks** (become investigation cycles):
+- **Initiative risks** (become investigation cycles):
   - Idea might be bad (kill condition)
   - Technical feasibility
   - Usability / UX
@@ -67,7 +67,7 @@ WHO:     human (decisions) assisted by agent (research, questioning, structuring
 
 The agent is a sparring partner, not a form to fill. Communication risks (extraction,
 translation, interpretation) are handled organically through conversation, not as
-procedural steps. Bet risks (technical, UX, business) become explicit investigation cycles.
+procedural steps. Initiative risks (technical, UX, business) become explicit investigation cycles.
 
 Discovery should feel like talking to a co-founder who questions, researches, and
 structures alongside you.

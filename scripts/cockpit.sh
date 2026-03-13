@@ -34,6 +34,11 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEMPLATE="$SCRIPT_DIR/../templates/cockpit.html"
 
+# ─── Shared helpers ───────────────────────────────────────────────────────────
+
+# shellcheck source=derive-status.sh
+source "$SCRIPT_DIR/derive-status.sh"
+
 # ─── JSON escape helper ───────────────────────────────────────────────────────
 
 json_escape() {
@@ -152,24 +157,7 @@ parse_results_json() {
 }
 
 # ─── Frontmatter helpers ──────────────────────────────────────────────────────
-
-frontmatter_field() {
-  local file="$1"
-  local field="$2"
-  awk -v field="$field" '
-    NR==1 && /^---/ { in_fm=1; next }
-    in_fm && /^---/ { exit }
-    in_fm {
-      key = $0
-      sub(/:.*/, "", key)
-      if (key == field) {
-        sub(/^[^:]*:[[:space:]]*/, "")
-        print
-        exit
-      }
-    }
-  ' "$file"
-}
+# frontmatter_field() is provided by derive-status.sh (sourced above)
 
 # Parse tags: `tags: [ui, cockpit]` → `["ui","cockpit"]`
 parse_tags() {
@@ -206,51 +194,7 @@ extract_problem() {
   ' "$file"
 }
 
-# ─── Determine phase from artifacts ───────────────────────────────────────────
-
-determine_phase() {
-  local dir="$1"
-  local status="$2"
-
-  if [[ "$status" == "archived" ]]; then
-    echo "shipped"
-    return
-  fi
-
-  if [[ -f "$dir/review.md" ]] && grep -q "^decision: approved" "$dir/review.md" 2>/dev/null; then
-    echo "approved"
-    return
-  fi
-
-  if [[ -f "$dir/results.md" ]]; then
-    local total_r failed_r
-    total_r=$(grep -c "^status:" "$dir/results.md" 2>/dev/null || true)
-    failed_r=$(grep -c "^status: failed" "$dir/results.md" 2>/dev/null || true)
-    if [[ "$total_r" -gt 0 && "$failed_r" -eq 0 ]]; then
-      echo "done"
-    else
-      echo "building"
-    fi
-    return
-  fi
-
-  if [[ -f "$dir/plan.md" ]]; then
-    echo "planned"
-    return
-  fi
-
-  if [[ -f "$dir/prd.md" ]]; then
-    echo "ready"
-    return
-  fi
-
-  if [[ -d "$dir/cycles" ]]; then
-    echo "exploring"
-    return
-  fi
-
-  echo "seed"
-}
+# determine_phase() replaced by derive_status() from derive-status.sh (sourced above)
 
 # ─── Project counter helpers (bash 3 compatible, no associative arrays) ───────
 # We store counts in temp files: /tmp/cockpit_proj_<project>_{draft,final,archived}
@@ -322,17 +266,15 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
   if [[ -n "$fm_file" ]]; then
     fm_id=$(frontmatter_field "$fm_file" "id")
     fm_project=$(frontmatter_field "$fm_file" "project")
-    fm_status=$(frontmatter_field "$fm_file" "status")
     fm_created=$(frontmatter_field "$fm_file" "created")
     fm_updated=$(frontmatter_field "$fm_file" "updated")
     fm_tags_raw=$(frontmatter_field "$fm_file" "tags")
   else
-    fm_id=""; fm_project=""; fm_status=""; fm_created=""; fm_updated=""; fm_tags_raw=""
+    fm_id=""; fm_project=""; fm_created=""; fm_updated=""; fm_tags_raw=""
   fi
 
   [[ -z "$fm_id" ]]      && fm_id="$feature"
   [[ -z "$fm_project" ]] && fm_project="$project"
-  [[ -z "$fm_status" ]]  && fm_status="draft"
 
   eff_project="$fm_project"
 
@@ -351,7 +293,7 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
   has_results=false; [[ -f "$feature_dir/results.md" ]] && has_results=true
   has_review=false;  [[ -f "$feature_dir/review.md" ]] && has_review=true
 
-  phase=$(determine_phase "$feature_dir" "$fm_status")
+  phase=$(derive_status "$feature_dir")
 
   cycle_count=0
   [[ "$has_cycles" == "true" ]] && cycle_count=$(ls "$feature_dir/cycles" 2>/dev/null | wc -l | tr -d ' ')
@@ -376,23 +318,22 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
 
   # Register project and accumulate counts
   proj_register "$eff_project"
-  case "$fm_status" in
-    draft)    proj_counter_inc "$eff_project" "draft" ;;
-    final)    proj_counter_inc "$eff_project" "final" ;;
-    archived) proj_counter_inc "$eff_project" "archived" ;;
-    *)        proj_counter_inc "$eff_project" "draft" ;;
+  case "$phase" in
+    seed|exploring)                       proj_counter_inc "$eff_project" "draft" ;;
+    ready|planned|building|done|approved) proj_counter_inc "$eff_project" "final" ;;
+    shipped)                              proj_counter_inc "$eff_project" "archived" ;;
+    *)                                    proj_counter_inc "$eff_project" "draft" ;;
   esac
 
   # Build initiative JSON object
   id_esc=$(json_escape "$fm_id")
   proj_esc=$(json_escape "$eff_project")
-  status_esc=$(json_escape "$fm_status")
   phase_esc=$(json_escape "$phase")
   created_esc=$(json_escape "${fm_created:-}")
   updated_esc=$(json_escape "${fm_updated:-}")
   problem_esc=$(json_escape "$problem")
 
-  initiative_obj="{\"id\":\"${id_esc}\",\"project\":\"${proj_esc}\",\"status\":\"${status_esc}\",\"phase\":\"${phase_esc}\",\"tags\":${tags_json},\"created\":\"${created_esc}\",\"updated\":\"${updated_esc}\",\"artifacts\":{\"draft\":${has_draft},\"cycles\":${has_cycles},\"prd\":${has_prd},\"plan\":${has_plan},\"results\":${has_results},\"review\":${has_review}},\"cycle_count\":${cycle_count},\"results_summary\":${results_summary},\"review_decision\":${review_decision},\"problem\":\"${problem_esc}\"}"
+  initiative_obj="{\"id\":\"${id_esc}\",\"project\":\"${proj_esc}\",\"status\":\"${phase_esc}\",\"phase\":\"${phase_esc}\",\"tags\":${tags_json},\"created\":\"${created_esc}\",\"updated\":\"${updated_esc}\",\"artifacts\":{\"draft\":${has_draft},\"cycles\":${has_cycles},\"prd\":${has_prd},\"plan\":${has_plan},\"results\":${has_results},\"review\":${has_review}},\"cycle_count\":${cycle_count},\"results_summary\":${results_summary},\"review_decision\":${review_decision},\"problem\":\"${problem_esc}\"}"
 
   if [[ $first_initiative -eq 0 ]]; then
     INITIATIVES_JSON+=","
@@ -442,7 +383,7 @@ while IFS= read -r proj; do
     total_c=$(( draft_c + final_c + archived_c ))
     proj_esc=$(json_escape "$proj")
 
-    project_obj="{\"id\":\"${proj_esc}\",\"bet_counts\":{\"draft\":${draft_c},\"final\":${final_c},\"archived\":${archived_c}},\"total\":${total_c}}"
+    project_obj="{\"id\":\"${proj_esc}\",\"initiative_counts\":{\"draft\":${draft_c},\"final\":${final_c},\"archived\":${archived_c}},\"total\":${total_c}}"
 
     if [[ $first_project -eq 0 ]]; then
       PROJECTS_JSON+=","

@@ -1,10 +1,11 @@
 ---
 id: <slug>
 project: <project-alias>
-status: draft
 created: <date>
 updated: <date>
 tags: []
+priority: medium
+supersedes:
 ---
 # PRD: <name>
 

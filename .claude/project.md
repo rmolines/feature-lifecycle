@@ -23,7 +23,6 @@ test: claude plugin validate .
 
 ## Paths
 learnings: LEARNINGS.md
-kickstart: /Users/rmolines/git/claude-kickstart
 
 ## Conventions
 branch-prefix: feat/

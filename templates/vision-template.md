@@ -22,7 +22,7 @@ O que prova que a tese está errada. Se isso for verdade, mata o projeto.
 
 ### M1: <name>
 O mínimo que entrega valor sozinho.
-- **Bet:** qual hipótese esse milestone valida
+- **Hypothesis:** qual hipótese esse milestone valida
 - **Entry:** /launchpad:discovery <project>/<milestone-slug>
 - **Depends on:** (nada, ou M anterior)
 - **Kill condition:** o que mata esse milestone específico
@@ -30,7 +30,7 @@ O mínimo que entrega valor sozinho.
   - [ ] <risk/spike que precisa ser resolvido no /discovery antes de avançar>
 
 ### M2: <name>
-- **Bet:** ...
+- **Hypothesis:** ...
 - **Entry:** /launchpad:discovery <project>/<milestone-slug>
 - **Depends on:** M1
 - **Kill condition:** ...

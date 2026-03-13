@@ -410,7 +410,7 @@ tags: []
 ## Milestones
 
 ### M1: <name>
-- **Bet:** <hypothesis this milestone validates>
+- **Hypothesis:** <hypothesis this milestone validates>
 - **Entry:** /launchpad:discovery <project>/<milestone-slug>
 - **Depends on:** <nothing or M-previous>
 - **Kill condition:** <what kills this milestone>

@@ -31,7 +31,7 @@ Before, a 70% good PRD worked because humans on the other side would interpret, 
 
 That's why `/discovery` exists: it's not bureaucracy — it's where human judgment has the highest ROI. Investigation cycles, mockups, spikes, all converging on a PRD that works as an execution contract.
 
-### Features are bets, not tasks
+### Features are initiatives, not tasks
 
 Each feature is a falsifiable hypothesis with a kill condition. `/discovery` exists to kill bad ideas early, not to document decisions already made. Each investigation cycle reduces risk before committing code.
 
@@ -44,7 +44,7 @@ Without a human squad, the system needs to create the friction points that used 
 | Old world (PM + squad) | New world (solo + agents) | In the plugin |
 |---|---|---|
 | Linear ticket | Self-contained prompt with context | `plan.md` with deliverables |
-| Sprint planning | Portfolio of bets | `~/.claude/discoveries/` with file-based state |
+| Sprint planning | Portfolio of initiatives | `~/.claude/discoveries/` with file-based state |
 | Peer code review | Validation against contract | `/review` diffs against PRD |
 | Daily standup | Deterministic state | File presence = feature state |
 | PRD to align stakeholders | PRD as execution spec | `/discovery` with iterative cycles |
@@ -235,7 +235,7 @@ Add to `~/.claude/settings.json`:
 
 ## Ecosystem
 
-This plugin follows the [5 Laws of Skill Contracts](https://github.com/rmolines/claude-kickstart):
+This plugin follows the 5 Laws of Skill Contracts:
 
 - **Law 1** — Artifact is the only durable contract (state on disk, not in memory)
 - **Law 2** — Artifacts have levels (discovery ≠ planning ≠ execution)

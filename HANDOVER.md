@@ -48,7 +48,7 @@
 - artifacts_present() must return dict, not list — JS template indexes by string key
 
 **Next steps:**
-- fl/domain-model-v2: rename Bet→Iniciativa, derived status as ecosystem standard
+- fl/domain-model-v2: rename Bet→Initiative, derived status as ecosystem standard
 - fl/mission-control: integrate as tab in unified shell
 
 **Key files:**

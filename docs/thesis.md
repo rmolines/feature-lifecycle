@@ -107,14 +107,14 @@ Discovery deals with risks of fundamentally different natures:
 - Human knows but can't articulate → translation, proposing interpretations
 - LLM misunderstood the intent → validation loops, "does this capture it?"
 
-**Bet risks** (become explicit investigation cycles):
+**Initiative risks** (become explicit investigation cycles):
 - The idea might be bad → kill conditions, competitive research
 - Technical feasibility → spikes, proof of concepts
 - Usability → mockups, prototype testing
 - Business viability → market research, analysis
 
 The key insight: communication risks should be handled **organically through good
-conversation**, not as procedural steps. Bet risks should be handled as **explicit,
+conversation**, not as procedural steps. Initiative risks should be handled as **explicit,
 documented cycles** that reduce uncertainty before committing code.
 
 ### 3. Push-back must be designed into the process
@@ -145,15 +145,15 @@ The process itself is the competitive advantage. Not the agents (everyone has ac
 the same models). Not the code (agents write that). The process that connects human judgment
 to agent execution in the right places.
 
-### 5. Features are bets, not tasks
+### 5. Features are initiatives, not tasks
 
-A task has a known outcome. A bet has a hypothesis. The difference matters because it
+A task has a known outcome. An initiative has a hypothesis. The difference matters because it
 changes how you treat failure:
 
 - Task fails → something went wrong, fix it
-- Bet fails → hypothesis was wrong, learn and move on
+- Initiative fails → hypothesis was wrong, learn and move on
 
-`/discovery` exists to kill bad bets early, not to document decisions already made. Each
+`/discovery` exists to kill bad initiatives early, not to document decisions already made. Each
 investigation cycle reduces risk before committing code. The kill condition in the PRD isn't
 a formality — it's the most honest line in the document.
 
@@ -199,7 +199,7 @@ capacity for the next stage. The artifact on disk is the only contract.
 | Old world (PM + squad) | New world (solo + agents) | In the plugin |
 |---|---|---|
 | Linear ticket | Self-contained prompt with context | `plan.md` deliverables |
-| Sprint planning | Portfolio of bets | `~/.claude/discoveries/` with file-based state |
+| Sprint planning | Portfolio of initiatives | `~/.claude/discoveries/` with file-based state |
 | Peer code review | Validation against contract | `/review` diffs against PRD |
 | Daily standup | Deterministic state | File presence = feature state |
 | PRD to align stakeholders | PRD as execution spec | `/discovery` with iterative cycles |
@@ -306,7 +306,7 @@ Structured artifacts on disk as source of truth. Karpathy evolved to "agentic en
 by treating the *entire lifecycle* as a gate-based process, not just the spec → code transition.
 The insight that nobody else has articulated cleanly: **process is an attention protocol, not a
 communication protocol.** SDD tools solve "how to write specs for agents." We solve "how to
-manage a portfolio of bets across multiple projects when you're the only human."
+manage a portfolio of initiatives across multiple projects when you're the only human."
 
 ### The gap we fill
 
