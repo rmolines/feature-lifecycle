@@ -1,5 +1,11 @@
 # Changelog
 
+## requirements-as-contract — PR #7 — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/discoveries/launchpad/requirements-as-contract/prd.md
+**Commit:** `git show 209f640`
+**Decisions:** see LEARNINGS.md#requirements-as-contract
+
 ## portfolio-review — PR #6 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/discoveries/fl/portfolio-review/prd.md

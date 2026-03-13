@@ -166,3 +166,36 @@
 - `~/git/launchpad/scripts/session_analyzer.py`
 - `~/git/launchpad/scripts/analyze-session.sh`
 - `~/git/launchpad/commands/tokens.md`
+
+## requirements-as-contract — 2026-03-13
+
+**What:** Promoted Requirements as a first-class PRD section with traceable R<N> IDs, replacing success criteria. Extended traceability across planning (deliverables reference R<N>s), review (evaluator validates each R individually with PASS/PARTIAL/FAIL/UNTESTABLE), and plan-view (requirements panel + per-deliverable badges + header stat counter).
+
+**PR:** #7 (209f640)
+**PRD:** ~/.claude/discoveries/launchpad/requirements-as-contract/prd.md
+
+**Key decisions:**
+- Requirements replace success criteria completely — they do not coexist. Net cognitive load is zero: same number of items, just promoted and IDed.
+- IDs use flat `R<N>` sequential numbering — no namespacing, no hierarchy. If decomposition is needed it's a signal the PRD is too broad.
+- `requirements:` field in the DAG is optional and comma-separated — fully backwards-compatible with existing plans (missing field renders without requirement badges, no breakage).
+- plan.md gains a `## Requirements` section copied from the PRD so plan-view.sh can access requirement texts without reading prd.md.
+- plan-view.sh extracts requirements at parse time and injects them into the JSON payload; HTML derives coverage and status client-side from the tasks data.
+- Requirement status in plan-view is derived from deliverable results: all covering tasks success → done; any failed → blocked; any success/partial → in progress; no results → pending.
+
+**Pitfalls discovered:**
+- None new beyond existing CLAUDE.md pitfalls (`__PLAN_DATA__` placeholder must not appear in requirement text).
+
+**Next steps:**
+- New PRDs should use `## Requirements` with R<N> IDs from the start — existing PRDs in `~/.claude/discoveries/` are not retroactively migrated (accepted in out-of-scope).
+- Validate plan-view.sh against existing plan.md files that lack a `## Requirements` section to confirm backwards compatibility in practice.
+- Review skill now emits per-R status table; validate that the evaluator model respects the PASS/PARTIAL/FAIL/UNTESTABLE schema on first real review cycle.
+
+**Key files changed:**
+- `~/git/launchpad/templates/prd-template.md` — `## Requirements` section added between Problem and Solution; `### Success criteria` removed from Solution (D1)
+- `~/git/launchpad/templates/plan-template.md` — `## Requirements` section added; `**Requirements:** R<N>` line added to deliverable format (D1)
+- `~/git/launchpad/templates/schemas.md` — `requirements` field added to DAG schema; `## Requirements Status` replaces `## Success Criteria Status` in review schema (D1)
+- `~/git/launchpad/commands/discovery.md` — quality gate updated to reference Requirements with R<N> IDs (D2)
+- `~/git/launchpad/commands/planning.md` — prompt checklist and deliverable format updated to require R<N> mapping (D2)
+- `~/git/launchpad/commands/review.md` — evaluator prompt updated to validate each R<N> individually with PASS/PARTIAL/FAIL/UNTESTABLE (D2)
+- `~/git/launchpad/scripts/plan-view.sh` — parses `requirements:` field from DAG and `## Requirements` section from plan.md; injects into JSON (D3)
+- `~/git/launchpad/templates/plan-view.html` — requirements overview panel, per-deliverable badges, header stat counter (D3)

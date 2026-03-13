@@ -32,3 +32,7 @@
 ## cockpit
 
 - macOS ships Bash 3.2, which has no associative arrays. When a script needs per-key counters that accumulate across a loop (e.g., bet counts per project), use a temp directory with one file per key: `echo $(( cur + 1 )) > "$COUNTER_DIR/${key}_${kind}"`. Read with `cat`, initialize with `touch`. Clean up via `trap 'rm -rf "$COUNTER_DIR"' EXIT`. This pattern is fully portable to Bash 3.2 and avoids `declare -A` or external tools like `jq` for what is essentially a hash map write path.
+
+## requirements-as-contract
+
+- Copying `## Requirements` from `prd.md` into `plan.md` at planning time creates a silent staleness risk: if the PRD is edited after the plan is generated, `plan-view.sh` renders the stale copy from plan.md, not the live PRD. The PRD documented this as a design decision ("plan-view.sh has access to requirement texts without reading prd.md") but did not flag it as a risk. Pattern: any time a planning step snapshots content from a source-of-truth artifact, document explicitly that the snapshot is frozen at planning time and will not auto-update. A future mitigation: diff `prd.md ## Requirements` against `plan.md ## Requirements` at review time and warn if they diverge.

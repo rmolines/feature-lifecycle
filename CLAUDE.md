@@ -61,3 +61,15 @@ Any code that reads `parsed["usage"]` directly and derives cost or total tokens 
 will silently under-count. Always use `parsed["cost"]` for cost, and replicate the
 `format_session_report` pattern (main usage + iterate `subagent_summaries`) for token
 totals.
+
+### `parse_requirements` in plan-view.sh silently drops requirements on format mismatch
+The awk parser in `scripts/plan-view.sh` only recognises requirement lines matching
+exactly `- **R<N>:** <text>`. Any deviation — missing bold markers (`- R1: text`),
+bold without trailing colon (`- **R1** text`), or leading whitespace — causes
+`parse_requirements` to return empty. The requirements panel in the HTML disappears
+silently. The script exits 0. The DAG `requirements:` field still references R-IDs
+but nothing links.
+
+Most likely to happen when an agent generates `## Requirements` in plan.md from
+scratch instead of copying verbatim from the PRD. Always use the exact format from
+`templates/plan-template.md` and `templates/prd-template.md`.
