@@ -30,10 +30,10 @@ elif [ -n "$ARGUMENTS" ]; then
 fi
 ```
 
-- If `PROJECT_FILTER` is set: scan only `~/.claude/discoveries/$PROJECT_FILTER/`
-- If empty: scan all `~/.claude/discoveries/*/` (excluding `_reviews/`)
+- If `PROJECT_FILTER` is set: scan only `~/.claude/initiatives/$PROJECT_FILTER/`
+- If empty: scan all `~/.claude/initiatives/*/` (excluding `_reviews/`)
 
-### Scan discoveries
+### Scan initiatives
 
 Source the status helper:
 
@@ -41,10 +41,10 @@ Source the status helper:
 source ~/git/launchpad/scripts/derive-status.sh
 ```
 
-For each project directory under `~/.claude/discoveries/` (skip `_reviews`):
+For each project directory under `~/.claude/initiatives/` (skip `_reviews`):
 
 ```bash
-for project_dir in ~/.claude/discoveries/*/; do
+for project_dir in ~/.claude/initiatives/*/; do
   project=$(basename "$project_dir")
   [ "$project" = "_reviews" ] && continue
   [ -n "$PROJECT_FILTER" ] && [ "$project" != "$PROJECT_FILTER" ] && continue
@@ -103,7 +103,7 @@ Present a grouped table per project:
 Highlight immediately obvious issues as findings:
 - Seeds with no update in 60+ days
 - Multiple seeds with similar-sounding problems
-- Projects with 0 active discoveries
+- Projects with 0 active initiatives
 - Discoveries stuck in "building" with no recent activity
 
 ---
@@ -124,7 +124,7 @@ detection skipped. Running on filesystem + LLM reasoning only."
 
 ### Read all active drafts
 
-Read every draft.md or prd.md for all active discoveries (status: seed, exploring,
+Read every draft.md or prd.md for all active initiatives (status: seed, exploring,
 planned, ready). For each, extract:
 - Problem statement (full `## Problem` section)
 - Solution summary (first paragraph of `## Solution`)
@@ -132,7 +132,7 @@ planned, ready). For each, extract:
 
 ### Reason about relationships
 
-For each pair of discoveries, evaluate relationship type:
+For each pair of initiatives, evaluate relationship type:
 
 | Type | When it applies |
 |---|---|
@@ -210,7 +210,7 @@ Then ask: "Where do you want to start?"
 | **consolidar** | Merge two+ into one | Explicit overlap (sobrepõe) — keeps the more scoped one |
 | **promover** | Move to active discovery | Problem is real, risk reduction not started yet |
 | **pausar** | Keep but deprioritize | Valid problem, not the right time |
-| **decompor** | Split into N smaller discoveries | Scope is too broad for one discovery |
+| **decompor** | Split into N smaller initiatives | Scope is too broad for one initiative |
 
 ### Collect decisions before executing
 
@@ -235,13 +235,13 @@ Execute each approved action sequentially. Report each result.
 
 ```bash
 # Move to archived/
-DISC_DIR="$HOME/.claude/discoveries/<project>/<slug>"
-ARCHIVED_DIR="$HOME/.claude/discoveries/<project>/archived"
+DISC_DIR="$HOME/.claude/initiatives/<project>/<slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$DISC_DIR" "$ARCHIVED_DIR/<slug>"
 ```
 
-Report: `✓ <slug> archived at ~/.claude/discoveries/<project>/archived/<slug>/`
+Report: `✓ <slug> archived at ~/.claude/initiatives/<project>/archived/<slug>/`
 
 ### consolidar
 
@@ -253,8 +253,8 @@ Survivor is the one to keep. Absorbed is the one to merge in and then archive.
 4. Archive the absorbed discovery:
 
 ```bash
-ABSORBED_DIR="$HOME/.claude/discoveries/<project>/<absorbed-slug>"
-ARCHIVED_DIR="$HOME/.claude/discoveries/<project>/archived"
+ABSORBED_DIR="$HOME/.claude/initiatives/<project>/<absorbed-slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$ABSORBED_DIR" "$ARCHIVED_DIR/<absorbed-slug>"
 ```
@@ -280,7 +280,7 @@ Report: `✓ <slug> deprioritized (priority: low set in frontmatter)`
 1. For each new sub-slug, create a draft.md:
 
 ```bash
-mkdir -p "$HOME/.claude/discoveries/<project>/<new-slug>"
+mkdir -p "$HOME/.claude/initiatives/<project>/<new-slug>"
 ```
 
 Write a draft.md from the template (read `~/git/launchpad/templates/prd-template.md`)
@@ -293,8 +293,8 @@ derived from the original discovery's problem.
 3. Archive the original:
 
 ```bash
-ORIGINAL_DIR="$HOME/.claude/discoveries/<project>/<original-slug>"
-ARCHIVED_DIR="$HOME/.claude/discoveries/<project>/archived"
+ORIGINAL_DIR="$HOME/.claude/initiatives/<project>/<original-slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$ORIGINAL_DIR" "$ARCHIVED_DIR/<original-slug>"
 ```
@@ -313,12 +313,12 @@ Before writing, count active/archived state for each project in scope.
 
 ### Write review log
 
-Create `~/.claude/discoveries/_reviews/`:
+Create `~/.claude/initiatives/_reviews/`:
 
 ```bash
-mkdir -p "$HOME/.claude/discoveries/_reviews"
+mkdir -p "$HOME/.claude/initiatives/_reviews"
 REVIEW_DATE=$(date +%Y-%m-%d)
-REVIEW_FILE="$HOME/.claude/discoveries/_reviews/$REVIEW_DATE.md"
+REVIEW_FILE="$HOME/.claude/initiatives/_reviews/$REVIEW_DATE.md"
 ```
 
 If a file for today already exists, append a `-2` suffix (or `-3`, etc.) to avoid
@@ -356,7 +356,7 @@ scope: <project-alias or "all">
 +N archived, -N consolidados, N promovidos
 ```
 
-Report: `✓ Review log written to ~/.claude/discoveries/_reviews/<date>.md`
+Report: `✓ Review log written to ~/.claude/initiatives/_reviews/<date>.md`
 
 ---
 

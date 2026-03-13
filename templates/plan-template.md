@@ -1,5 +1,5 @@
 # Plan: <name>
-_PRD: ~/.claude/discoveries/<repo>/<name>/prd.md_
+_PRD: ~/.claude/initiatives/<repo>/<name>/prd.md_
 _Generated on: <date>_
 
 ## Requirements

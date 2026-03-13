@@ -310,7 +310,7 @@ DECISION=$(grep "^decision:" review.md | awk '{print $2}')
 
 ## Schema 5: Delivery Results (results.md)
 
-`/delivery` writes this file after all batches complete. It persists the per-deliverable results that would otherwise be lost when the chat session ends. Saved to `~/.claude/discoveries/<repo>/<feature>/results.md`.
+`/delivery` writes this file after all batches complete. It persists the per-deliverable results that would otherwise be lost when the chat session ends. Saved to `~/.claude/initiatives/<repo>/<feature>/results.md`.
 
 ### Format
 
@@ -446,7 +446,7 @@ tags: []
 
 | Field | Rules |
 |---|---|
-| `id` | Project slug. Used in filesystem paths: `~/.claude/discoveries/<id>/` |
+| `id` | Project slug. Used in filesystem paths: `~/.claude/initiatives/<id>/` |
 | `status` | `draft` (in progress), `validated` (finalized), `active` (milestones being executed), `paused`, `archived` |
 | Milestone `Entry` | Must be a valid `/launchpad:discovery` command that the human can copy-paste |
 | Milestone `Depends on` | References other milestone IDs (M1, M2...) or empty for no dependencies |
@@ -459,7 +459,7 @@ Milestone status is derived from the filesystem, not from vision.md:
 
 ```bash
 PROJECT="ciclosp"
-for ms_dir in ~/.claude/discoveries/$PROJECT/*/; do
+for ms_dir in ~/.claude/initiatives/$PROJECT/*/; do
   ms=$(basename "$ms_dir")
   [ "$ms" = "cycles" ] && continue
   if [ -d "$ms_dir/archived" ]; then echo "$ms: archived"

@@ -60,11 +60,11 @@ One question at a time. Justify before asking. Push back when something doesn't 
 
 ### Filesystem structure
 
-Visions live under `~/.claude/discoveries/<project>/`. The vision.md sits at the
+Visions live under `~/.claude/initiatives/<project>/`. The vision.md sits at the
 project root, milestones are subdirectories:
 
 ```
-~/.claude/discoveries/ciclosp/
+~/.claude/initiatives/ciclosp/
   vision.md                          ← this command's artifact
   cycles/                            ← vision-level investigation cycles
     01-framing-thesis.md
@@ -77,7 +77,7 @@ project root, milestones are subdirectories:
 
 ### Parse arguments
 
-- Simple slug → project name. Look for `~/.claude/discoveries/<slug>/vision.md`
+- Simple slug → project name. Look for `~/.claude/initiatives/<slug>/vision.md`
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view
 - Empty → show portfolio view if visions exist, then ask what to explore
@@ -87,7 +87,7 @@ project root, milestones are subdirectories:
 When called with `--status` or with no arguments:
 
 ```bash
-for dir in ~/.claude/discoveries/*/; do
+for dir in ~/.claude/initiatives/*/; do
   [ -f "$dir/vision.md" ] || continue
   project=$(basename "$dir")
   status=$(grep "^status:" "$dir/vision.md" | head -1 | sed 's/^status: //')

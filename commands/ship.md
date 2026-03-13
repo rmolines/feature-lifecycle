@@ -23,7 +23,7 @@ Input: $ARGUMENTS
 ### Resolve PRD and plan
 
 Same resolution as `/launchpad:review`:
-- `$ARGUMENTS` → `~/.claude/discoveries/$ARGUMENTS/`
+- `$ARGUMENTS` → `~/.claude/initiatives/$ARGUMENTS/`
 - Inside a repo → infer from `$REPO_NAME`
 - Multiple → list and ask
 - None → warn, proceed without (PR won't include PRD references)
@@ -334,10 +334,10 @@ git branch -D "worktree-$FEATURE" 2>/dev/null || true
 ### Archive discovery
 
 ```bash
-DISCOVERY_DIR="$HOME/.claude/discoveries/$REPO_NAME/$FEATURE"
+DISCOVERY_DIR="$HOME/.claude/initiatives/$REPO_NAME/$FEATURE"
 if [ -d "$DISCOVERY_DIR" ]; then
-  mkdir -p "$HOME/.claude/discoveries/$REPO_NAME/archived/"
-  mv "$DISCOVERY_DIR" "$HOME/.claude/discoveries/$REPO_NAME/archived/$FEATURE"
+  mkdir -p "$HOME/.claude/initiatives/$REPO_NAME/archived/"
+  mv "$DISCOVERY_DIR" "$HOME/.claude/initiatives/$REPO_NAME/archived/$FEATURE"
 fi
 ```
 
@@ -367,7 +367,7 @@ bash ~/git/launchpad/scripts/cockpit.sh --refresh
 
 **Cleanup:**
 - Worktree: <removed | not applicable>
-- Discovery: moved to ~/.claude/discoveries/<repo>/archived/<feature>/
+- Discovery: moved to ~/.claude/initiatives/<repo>/archived/<feature>/
 
 Cycle closed. Next: /launchpad:discovery for the next feature.
 ```

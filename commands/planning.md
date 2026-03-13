@@ -31,14 +31,14 @@ without asking anything, without session context, without reading other delivera
 
 **If `$ARGUMENTS` provided:**
 Try in order:
-1. `~/.claude/discoveries/$ARGUMENTS/prd.md`
-2. `~/.claude/discoveries/*/$ARGUMENTS/prd.md` (glob)
+1. `~/.claude/initiatives/$ARGUMENTS/prd.md`
+2. `~/.claude/initiatives/*/$ARGUMENTS/prd.md` (glob)
 3. `$ARGUMENTS` as literal path
 
 **If inside a repo (has `.git`):**
 ```bash
 REPO=$(basename $(git rev-parse --show-toplevel 2>/dev/null))
-ls ~/.claude/discoveries/$REPO/*/prd.md 2>/dev/null
+ls ~/.claude/initiatives/$REPO/*/prd.md 2>/dev/null
 ```
 - Exactly 1 result → use it
 - Multiple → list and ask the user to choose
@@ -46,7 +46,7 @@ ls ~/.claude/discoveries/$REPO/*/prd.md 2>/dev/null
 
 **If nothing found:**
 ```
-No prd.md found in ~/.claude/discoveries/
+No prd.md found in ~/.claude/initiatives/
 Run /launchpad:discovery to create a PRD before planning.
 ```
 
@@ -60,7 +60,7 @@ Run /launchpad:discovery to create a PRD before planning.
 ### Check for review.md (amendment mode)
 
 ```bash
-ls ~/.claude/discoveries/$FEATURE_PATH/review.md 2>/dev/null
+ls ~/.claude/initiatives/$FEATURE_PATH/review.md 2>/dev/null
 ```
 
 If `review.md` exists AND `decision: back-to-planning`:
@@ -376,18 +376,18 @@ Wait for the user's response:
 ## Save plan.md
 
 After approval, save to the same directory as prd.md:
-`~/.claude/discoveries/<repo>/<feature>/plan.md`
+`~/.claude/initiatives/<repo>/<feature>/plan.md`
 
 Use the template from `templates/plan-template.md` as the base structure.
 
 Then generate the visual plan view so the human can review the structure in the browser:
 ```bash
-bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/discoveries/<repo>/<feature>/plan.md
+bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/initiatives/<repo>/<feature>/plan.md
 ```
 
 Confirm:
 ```
-plan.md saved to ~/.claude/discoveries/<repo>/<feature>/plan.md
+plan.md saved to ~/.claude/initiatives/<repo>/<feature>/plan.md
 
 Next step: /launchpad:delivery <repo>/<feature>
 Recommend /clear before continuing.

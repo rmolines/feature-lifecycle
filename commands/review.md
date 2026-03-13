@@ -38,14 +38,14 @@ judges from the one who acts.
 ### Resolve PRD and plan
 
 **If `$ARGUMENTS` provided:**
-- Try `~/.claude/discoveries/$ARGUMENTS/prd.md`
-- Try `~/.claude/discoveries/*/$ARGUMENTS/prd.md`
+- Try `~/.claude/initiatives/$ARGUMENTS/prd.md`
+- Try `~/.claude/initiatives/*/$ARGUMENTS/prd.md`
 - Try as literal path
 
 **If inside a repo (has `.git`):**
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-ls ~/.claude/discoveries/$REPO_NAME/*/prd.md 2>/dev/null
+ls ~/.claude/initiatives/$REPO_NAME/*/prd.md 2>/dev/null
 ```
 
 **If multiple:** list and ask.
@@ -232,7 +232,7 @@ Count only PASS as "passing". Show PARTIAL and UNTESTABLE counts in parentheses.
 
 After presenting the decision to the user, write the evaluation findings to disk so downstream skills can read them after `/clear`.
 
-Save to: `~/.claude/discoveries/<repo>/<feature>/review.md`
+Save to: `~/.claude/initiatives/<repo>/<feature>/review.md`
 (same directory as `prd.md` and `plan.md`)
 
 **Use this exact format** (Schema 4 — downstream skills parse it with `grep "^decision:"`):
@@ -263,7 +263,7 @@ reason: <1-2 sentence justification>
 
 Reviews are **overwrite, not append** — only the latest review matters. Previous review.md is replaced.
 
-Confirm to the user: `Review findings saved to ~/.claude/discoveries/<repo>/<feature>/review.md`
+Confirm to the user: `Review findings saved to ~/.claude/initiatives/<repo>/<feature>/review.md`
 
 ### Route the user
 

@@ -74,9 +74,9 @@ if git rev-parse --is-inside-work-tree 2>/dev/null; then
 fi
 ```
 
-- **Inside a repo** → features live under `~/.claude/discoveries/$REPO_NAME/<feature>/`.
+- **Inside a repo** → features live under `~/.claude/initiatives/$REPO_NAME/<feature>/`.
   Read `.claude/project.md` and `CLAUDE.md` for project context.
-- **Outside a repo** → new project. Features live under `~/.claude/discoveries/<project>/`.
+- **Outside a repo** → new project. Features live under `~/.claude/initiatives/<project>/`.
 
 ### Check for vision context
 
@@ -84,7 +84,7 @@ fi
 # Resolve project name from argument (e.g. "ciclosp/mvp-mapa" → "ciclosp")
 PROJECT=$(echo "$ARGUMENTS" | cut -d'/' -f1)
 [ -z "$PROJECT" ] && PROJECT=$REPO_NAME
-VISION_PATH="$HOME/.claude/discoveries/$PROJECT/vision.md"
+VISION_PATH="$HOME/.claude/initiatives/$PROJECT/vision.md"
 ```
 
 If `vision.md` exists at the project level, **read it before starting**. The vision
@@ -106,15 +106,15 @@ this feature's scope?"
 - Simple slug → feature name (inside detected project) or project name (outside repo)
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view (see below)
-- Empty → show portfolio view if discoveries exist, then ask what to explore
+- Empty → show portfolio view if initiatives exist, then ask what to explore
 
 ### Portfolio view
 
-When called with `--status`, or with no arguments and existing discoveries, show the
+When called with `--status`, or with no arguments and existing initiatives, show the
 state of all features for the current project (or all projects if outside a repo):
 
 ```bash
-for dir in ~/.claude/discoveries/$REPO_NAME/*/; do
+for dir in ~/.claude/initiatives/$REPO_NAME/*/; do
   [ -d "$dir" ] || continue
   feature=$(basename "$dir")
   if [ -f "$dir/review.md" ] && grep -q "^decision: approved" "$dir/review.md"; then status="approved"
@@ -240,9 +240,9 @@ Once the problem is clear, evaluate whether it's one feature or multiple:
 
 Then create initial drafts for each feature under the same project:
 ```
-~/.claude/discoveries/<project>/auth/draft.md
-~/.claude/discoveries/<project>/dashboard/draft.md
-~/.claude/discoveries/<project>/billing/draft.md
+~/.claude/initiatives/<project>/auth/draft.md
+~/.claude/initiatives/<project>/dashboard/draft.md
+~/.claude/initiatives/<project>/billing/draft.md
 ```
 
 Each draft gets the shared framing context (problem, project background) but scoped to

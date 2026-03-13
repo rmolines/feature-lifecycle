@@ -15,7 +15,7 @@ PROJECT=$(grep "^alias:" .claude/project.md 2>/dev/null | sed 's/^alias: //' | h
 if [ -z "$PROJECT" ]; then
   PROJECT=$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)
 fi
-DISCOVERIES_DIR="$HOME/.claude/discoveries/$PROJECT"
+DISCOVERIES_DIR="$HOME/.claude/initiatives/$PROJECT"
 TODAY=$(date +%Y-%m-%d)
 ```
 
@@ -29,7 +29,7 @@ Parse the arguments passed to this skill:
 
 Run:
 ```bash
-ls "$HOME/.claude/discoveries/$PROJECT/" 2>/dev/null | head -20
+ls "$HOME/.claude/initiatives/$PROJECT/" 2>/dev/null | head -20
 ```
 
 List existing drafts (drafts only — files named `draft.md`). Then ask: "What do you want to capture? Give me a slug and one-liner (e.g. `fast-login fix the login flow`)."
@@ -38,7 +38,7 @@ List existing drafts (drafts only — files named `draft.md`). Then ask: "What d
 
 Check if draft already exists:
 ```bash
-DRAFT_PATH="$HOME/.claude/discoveries/$PROJECT/<slug>/draft.md"
+DRAFT_PATH="$HOME/.claude/initiatives/$PROJECT/<slug>/draft.md"
 ```
 
 **If it exists:** append the one-liner as a new line to the `## Problem` section and update `updated:` in frontmatter. Confirm:
@@ -81,7 +81,7 @@ Maximum 2 questions total. Then save and confirm same as silent mode.
 
 First, verify the original exists:
 ```bash
-ls "$HOME/.claude/discoveries/$PROJECT/<original-slug>/" 2>/dev/null
+ls "$HOME/.claude/initiatives/$PROJECT/<original-slug>/" 2>/dev/null
 ```
 
 If it doesn't exist: warn "Original slug `<original-slug>` not found in $PROJECT. Falling back to normal draft mode." Then proceed as minimal conversation mode.

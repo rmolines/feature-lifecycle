@@ -29,13 +29,13 @@ subagents. All orchestration flows from this thread.
 **If `$ARGUMENTS` provided:**
 Try in order:
 1. `$ARGUMENTS/plan.md` as literal path
-2. `~/.claude/discoveries/$ARGUMENTS/plan.md`
-3. `~/.claude/discoveries/$ARGUMENTS/*/plan.md`
+2. `~/.claude/initiatives/$ARGUMENTS/plan.md`
+3. `~/.claude/initiatives/$ARGUMENTS/*/plan.md`
 
 **If inside a repo (has `.git`):**
 ```bash
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
-ls ~/.claude/discoveries/$REPO_NAME/*/plan.md 2>/dev/null
+ls ~/.claude/initiatives/$REPO_NAME/*/plan.md 2>/dev/null
 ```
 
 **If nothing found:**
@@ -72,7 +72,7 @@ If the plan lacks an Execution DAG section:
 ### Check for review.md (amendment mode)
 
 ```bash
-ls ~/.claude/discoveries/$FEATURE_PATH/review.md 2>/dev/null
+ls ~/.claude/initiatives/$FEATURE_PATH/review.md 2>/dev/null
 ```
 
 If `review.md` exists AND `decision: back-to-delivery`:
@@ -293,7 +293,7 @@ Generate a list of what needs human validation:
 After all batches complete and before generating the final report, write `results.md` to the feature's discovery directory:
 
 ```bash
-~/.claude/discoveries/<repo>/<feature>/results.md
+~/.claude/initiatives/<repo>/<feature>/results.md
 ```
 
 Use Schema 5 format (see `templates/schemas.md`). For each deliverable, write one block with the fields: `task`, `status`, `summary`, `files_changed`, `errors`, `validation_result`. Blocks are separated by blank lines.
@@ -312,7 +312,7 @@ validation_result:
 After writing results.md, generate the visual results view:
 
 ```bash
-bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/discoveries/<repo>/<feature>/plan.md --results ~/.claude/discoveries/<repo>/<feature>/results.md
+bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/initiatives/<repo>/<feature>/plan.md --results ~/.claude/initiatives/<repo>/<feature>/results.md
 ```
 
 Then refresh the cockpit to reflect delivery progress:
@@ -371,7 +371,7 @@ In amendment mode, skipped deliverables must also be written to results.md with 
 
 After successful amendment delivery, **delete review.md** to clear the amendment flag:
 ```bash
-rm ~/.claude/discoveries/$FEATURE_PATH/review.md
+rm ~/.claude/initiatives/$FEATURE_PATH/review.md
 ```
 This prevents the next `/review` from seeing stale findings.
 
