@@ -50,3 +50,14 @@ a plain string, producing an empty table row. Exit code is 0, no error is printe
 
 Fix: ensure PyYAML is installed (`pip install pyyaml`) so the primary parser runs.
 Never use flat string items for `needs-attention` — always use the dict schema above.
+
+### `session_analyzer.py` — `usage` field excludes subagent tokens; `cost` field includes them
+`parse_transcript()` returns a dict where `usage` contains only the main session's token
+counts (from the root `.jsonl`). Subagent tokens are parsed separately and added to `cost`,
+but **not** merged back into `usage`. The display in `format_session_report` adds them
+manually for the printed total, and `aggregate_sessions` sums subagent tokens inline.
+
+Any code that reads `parsed["usage"]` directly and derives cost or total tokens from it
+will silently under-count. Always use `parsed["cost"]` for cost, and replicate the
+`format_session_report` pattern (main usage + iterate `subagent_summaries`) for token
+totals.

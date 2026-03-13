@@ -1,5 +1,11 @@
 # Changelog
 
+## Session Analyzer — PR #5 — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/discoveries/fl/session-analyzer/prd.md
+**Commit:** `git show dac0e7a`
+**Decisions:** see LEARNINGS.md#session-analyzer
+
 ## cockpit-sync — PR #4 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/discoveries/fl/cockpit-sync/prd.md

@@ -142,3 +142,27 @@
 - Add `## State` to each active repo's `.claude/project.md` to populate milestone/progress data (incremental — only repos that want cockpit detail need it).
 - Add `SessionStart` staleness check: warn if `cockpit.json` is older than 3 days.
 - `portfolio-review` discovery: analysis and prioritization layer on top of the now-reliable cockpit data.
+
+## Session Analyzer — PR #5 — 2026-03-13
+
+**What:** Token consumption across launchpad skills was invisible — optimizations were intuition-based with no data on which skills spend the most, where unnecessary re-reads occur, or whether subagents are used efficiently. This feature adds an on-demand analyzer (`analyze-session.sh`) that parses Claude Code `.jsonl` transcripts and produces per-session token breakdowns, cost estimates, tool call breakdowns, and waste heuristics, plus a `--summary` mode that aggregates the last N sessions grouped by skill.
+
+**Key decisions:**
+- Bash + Python 3 stdlib only — no pip dependencies, consistent with existing scripts in `scripts/`.
+- Skill detection via `<command-name>` tag in user message content; unmatched sessions labeled "ad-hoc".
+- Pricing hardcoded per model (opus, sonnet, haiku) — intentionally kept as a one-line manual update, not auto-fetched.
+- Waste heuristics are advisory (reported as "Opportunities:" with ⚠/ℹ), not errors — re-reads can be intentional.
+- Subagent transcripts included in the parent session token count; subagent token deduplication is a known open question (see Next steps).
+- Three deliverables: D1 (parser + report), D2 (waste heuristics), D3 (--summary aggregation) — D2 and D3 parallelized after D1.
+
+**Pitfalls:**
+- Skill detection reads `<command-name>` tags but Claude Code also injects built-in command names (e.g. `/help`, `/clear`) using the same tag format — these pollute the skill grouping in `--summary` mode. Filter is not yet applied (see Next steps).
+
+**Next steps:**
+- Filter built-in commands (`/help`, `/clear`, `/init`, etc.) from skill detection so they don't appear as skills in `--summary` output.
+- Validate subagent token deduplication: confirm whether subagent usage is already included in the parent session's `message.usage` totals or whether the current double-counting produces inflated costs.
+
+**Key files:**
+- `~/git/launchpad/scripts/session_analyzer.py`
+- `~/git/launchpad/scripts/analyze-session.sh`
+- `~/git/launchpad/commands/tokens.md`
