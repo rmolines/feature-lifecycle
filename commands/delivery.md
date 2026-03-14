@@ -347,16 +347,12 @@ errors:
 validation_result:
 ```
 
-After writing results.md, generate the visual results view:
+After writing results.md, open the visual results view in the browser:
 
 ```bash
-bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/initiatives/<mission>/<feature>/plan.md --results ~/.claude/initiatives/<mission>/<feature>/results.md
+open http://localhost:3333/plan-view?m=<mission>&mod=<module>
 ```
-
-Then refresh Mission Control to reflect delivery progress:
-```bash
-bash ~/git/launchpad/scripts/cockpit.sh --refresh
-```
+Where `<mission>` is the mission slug and `<module>` is the feature slug. The server auto-refreshes Mission Control via watcher — no explicit refresh needed.
 
 ---
 

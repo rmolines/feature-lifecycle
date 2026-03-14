@@ -2,14 +2,12 @@
 description: Open the cockpit — unified workspace viewer
 ---
 
-Run the cockpit script to open the workspace dashboard in the browser.
+Open the workspace dashboard in the browser via the workspace server.
 
-```bash
-bash ~/git/launchpad/scripts/cockpit.sh $ARGUMENTS
-```
+Parse $ARGUMENTS:
+- No arguments or `--refresh`: `open http://localhost:3333/cockpit`
+- `--mission <id>`: `open http://localhost:3333/mission-view?m=<id>`
 
-Supported arguments (passed via $ARGUMENTS):
-- `--project <alias>` — filter by project (e.g. `--project fl`)
-- No arguments — show all projects
+The server runs on port 3333 and auto-refreshes via watcher — no explicit refresh needed.
 
 After running, confirm to the user that the cockpit was opened.
