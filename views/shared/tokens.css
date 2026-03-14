@@ -1,0 +1,175 @@
+/* ── Launchpad Design System — Tokens ─────────────────────────────────── */
+
+:root {
+  /* Colors */
+  --color-bg: #0f1117;
+  --color-panel: #0a0d16;
+  --color-border: #1e2235;
+  --color-border-dim: #141720;
+  --color-text-primary: #cbd5e1;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #475569;
+  --color-text-bright: #e2e8f0;
+  --color-accent: #6366f1;
+  --color-accent-light: #818cf8;
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+
+  /* Status dot colors */
+  --color-seed: #64748b;
+  --color-exploring: #818cf8;
+  --color-ready: #60a5fa;
+  --color-planned: #22d3ee;
+  --color-building: #fbbf24;
+  --color-done: #4ade80;
+  --color-approved: #34d399;
+  --color-shipped: #475569;
+
+  /* Typography */
+  --font-mono: 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
+  --font-size-xs: 9px;
+  --font-size-sm: 11px;
+  --font-size-md: 13px;
+  --font-size-lg: 15px;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Radii */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-mono);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3d4a; }
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.tab-btn {
+  padding: 4px 14px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: all 0.1s;
+  cursor: pointer;
+  background: none;
+  font-family: var(--font-mono);
+}
+.tab-btn:hover { color: #94a3b8; }
+.tab-btn.active { color: var(--color-text-bright); border-bottom-color: var(--color-accent); }
+
+/* ── Status dots ───────────────────────────────────────────────────────── */
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot-seed      { background: var(--color-seed); }
+.dot-exploring { background: var(--color-exploring); box-shadow: 0 0 5px rgba(129,140,248,0.4); }
+.dot-ready     { background: var(--color-ready); box-shadow: 0 0 5px rgba(96,165,250,0.4); }
+.dot-planned   { background: var(--color-planned); box-shadow: 0 0 5px rgba(34,211,238,0.4); }
+.dot-building  { background: var(--color-building); box-shadow: 0 0 5px rgba(251,191,36,0.4); }
+.dot-done      { background: var(--color-done); box-shadow: 0 0 5px rgba(74,222,128,0.4); }
+.dot-approved  { background: var(--color-approved); box-shadow: 0 0 5px rgba(52,211,153,0.4); }
+.dot-shipped   { background: var(--color-shipped); }
+
+/* ── Badges ────────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.badge-seed      { background: rgba(71,85,105,0.2);   color: #94a3b8; border: 1px solid #334155; }
+.badge-exploring { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid #3730a3; }
+.badge-ready     { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid #1d4ed8; }
+.badge-planned   { background: rgba(6,182,212,0.15);  color: #67e8f9; border: 1px solid #0e7490; }
+.badge-building  { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid #b45309; }
+.badge-done      { background: rgba(34,197,94,0.15);  color: #86efac; border: 1px solid #15803d; }
+.badge-approved  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid #047857; }
+.badge-shipped   { background: rgba(71,85,105,0.15);  color: #64748b; border: 1px solid #334155; }
+
+/* ── Initiative card ───────────────────────────────────────────────────── */
+
+.initiative-card {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.initiative-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
+
+.border-seed      { border-left-color: #475569; }
+.border-exploring { border-left-color: #6366f1; }
+.border-ready     { border-left-color: #3b82f6; }
+.border-planned   { border-left-color: #06b6d4; }
+.border-building  { border-left-color: #f59e0b; }
+.border-done      { border-left-color: #22c55e; }
+.border-approved  { border-left-color: #10b981; }
+.border-shipped   { border-left-color: #334155; }
+
+/* ── Tags ──────────────────────────────────────────────────────────────── */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  background: #131827;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  margin-right: 3px;
+}
+
+/* ── Artifact row ──────────────────────────────────────────────────────── */
+
+.artifact-row { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); color: var(--color-text-muted); padding: 3px 0; }
+.artifact-present { color: var(--color-done); }
+.artifact-absent  { color: #334155; }
+
+/* ── Shipped dim ───────────────────────────────────────────────────────── */
+
+.shipped-dim { opacity: 0.5; }

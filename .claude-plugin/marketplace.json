@@ -1,7 +1,5 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "launchpad",
-  "description": "Complete feature lifecycle: discovery, planning, delivery, review, and ship.",
   "owner": {
     "name": "rmolines"
   },

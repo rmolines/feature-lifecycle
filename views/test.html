@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workspace Server</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+    body { font-family: 'Fira Code', monospace; }
+  </style>
+</head>
+<body class="min-h-screen" style="background-color:#0f1117;color:#e2e8f0;">
+  <div class="max-w-2xl mx-auto p-8" x-data="app()" x-init="init()">
+    <h1 class="text-2xl font-medium mb-8 text-white">Workspace Server</h1>
+
+    <section class="mb-8">
+      <h2 class="text-sm uppercase tracking-widest text-slate-400 mb-3">Health</h2>
+      <div class="rounded-lg p-4" style="background-color:#1a1d27;border:1px solid #2d3148;">
+        <pre class="text-sm text-green-400 whitespace-pre-wrap" x-text="healthJson || 'loading…'"></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-sm uppercase tracking-widest text-slate-400 mb-3">WebSocket Log</h2>
+      <div class="rounded-lg p-4 h-48 overflow-y-auto" style="background-color:#1a1d27;border:1px solid #2d3148;">
+        <template x-for="(entry, i) in wsLog" :key="i">
+          <div class="text-xs mb-1" :class="entry.type === 'error' ? 'text-red-400' : entry.type === 'open' ? 'text-green-400' : 'text-slate-300'">
+            <span class="text-slate-500" x-text="entry.ts"></span>
+            <span class="ml-2" x-text="entry.msg"></span>
+          </div>
+        </template>
+        <div x-show="wsLog.length === 0" class="text-slate-500 text-xs">No events yet…</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        healthJson: null,
+        wsLog: [],
+        ws: null,
+
+        init() {
+          this.fetchHealth();
+          this.connectWs();
+        },
+
+        fetchHealth() {
+          fetch('/api/health')
+            .then(r => r.json())
+            .then(data => { this.healthJson = JSON.stringify(data, null, 2); })
+            .catch(err => { this.healthJson = 'Error: ' + err.message; });
+        },
+
+        connectWs() {
+          const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+          const url = `${proto}://${location.host}/ws`;
+          this.ws = new WebSocket(url);
+
+          this.ws.addEventListener('open', () => {
+            this.log('open', 'Connected to ' + url);
+          });
+          this.ws.addEventListener('close', () => {
+            this.log('close', 'Disconnected');
+          });
+          this.ws.addEventListener('error', () => {
+            this.log('error', 'WebSocket error');
+          });
+          this.ws.addEventListener('message', (e) => {
+            this.log('message', e.data);
+          });
+        },
+
+        log(type, msg) {
+          const ts = new Date().toLocaleTimeString();
+          this.wsLog.push({ type, msg, ts });
+          if (this.wsLog.length > 100) this.wsLog.shift();
+        },
+      };
+    }
+  </script>
+</body>
+</html>

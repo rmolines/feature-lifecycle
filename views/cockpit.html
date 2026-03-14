@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit — Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/views/shared/tokens.css">
+<script src="/views/shared/components.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<script src="/views/shared/ws-client.js"></script>
+<style>
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .cockpit-header {
+    flex-shrink: 0;
+    background: var(--color-panel);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* ── Stat chip ───────────────────────────────────────────────────────── */
+  .stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+  }
+  .stat-chip strong { color: var(--color-text-primary); font-weight: 600; }
+
+  /* ── Project tabs ────────────────────────────────────────────────────── */
+  .project-tab-bar {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 20px;
+    border-top: 1px solid var(--color-border);
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .project-tab-bar::-webkit-scrollbar { display: none; }
+
+  /* ── Main content ────────────────────────────────────────────────────── */
+  .cockpit-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  /* ── Initiative grid ─────────────────────────────────────────────────── */
+  .initiative-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  /* ── Initiative card overrides ───────────────────────────────────────── */
+  .initiative-card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+
+  /* ── Expand toggle ───────────────────────────────────────────────────── */
+  .expand-chevron {
+    transition: transform 0.15s ease;
+    color: var(--color-text-secondary);
+  }
+  .expand-chevron.open { transform: rotate(180deg); }
+
+  /* ── Artifact pill ───────────────────────────────────────────────────── */
+  .artifact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: lowercase;
+  }
+  .artifact-pill.present {
+    background: rgba(74,222,128,0.1);
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.2);
+  }
+  .artifact-pill.absent {
+    background: rgba(71,85,105,0.1);
+    color: #334155;
+    border: 1px solid rgba(71,85,105,0.15);
+  }
+
+  /* ── Empty state ─────────────────────────────────────────────────────── */
+  .empty-state {
+    color: #3a4560;
+    font-size: 11px;
+    text-align: center;
+    padding: 40px 20px;
+    border: 1px dashed #252a3a;
+    border-radius: var(--radius-md);
+  }
+
+  /* ── Loading pulse ───────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Status counts bar ───────────────────────────────────────────────── */
+  .status-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--color-text-secondary);
+    background: rgba(30,34,53,0.7);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: opacity 0.1s;
+  }
+  .status-mini-badge:hover { opacity: 0.8; }
+
+  /* ── Section label ───────────────────────────────────────────────────── */
+  .section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ROOT — Alpine workspace
+════════════════════════════════════════════════════════════════════════════ -->
+<div
+  x-data="cockpitWorkspace()"
+  x-init="init()"
+  class="flex flex-col h-full"
+>
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="cockpit-header">
+    <!-- Top bar: logo + stats -->
+    <div class="flex items-center justify-between px-5 py-2.5">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <span style="font-size:13px; color:#818cf8; font-weight:600; letter-spacing:-0.02em;">cockpit://</span>
+        <span style="font-size:10px; color:#334155;">launchpad</span>
+      </div>
+
+      <!-- Stats -->
+      <div class="flex items-center gap-5">
+        <!-- Total -->
+        <div class="stat-chip">
+          <span>initiatives</span>
+          <strong x-text="totalCount"></strong>
+        </div>
+
+        <!-- Per-project counts -->
+        <template x-for="project in projects" :key="project">
+          <div class="stat-chip">
+            <span x-text="project"></span>
+            <strong x-text="initiatives.filter(d => d.project === project).length"></strong>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Status counts bar -->
+    <div class="flex items-center gap-2 px-5 pb-2" x-show="!loading && totalCount > 0">
+      <template x-for="(count, status) in statusCounts" :key="status">
+        <span class="status-mini-badge" :title="status">
+          <span class="status-dot" :class="statusDotClass(status)"></span>
+          <span x-text="count"></span>
+          <span x-text="status" style="color: #475569;"></span>
+        </span>
+      </template>
+    </div>
+
+    <!-- Project tab bar -->
+    <div class="project-tab-bar">
+      <button
+        class="tab-btn"
+        :class="{ active: activeProject === 'all' }"
+        @click="setProject('all')"
+      >all</button>
+      <template x-for="project in projects" :key="project">
+        <button
+          class="tab-btn"
+          :class="{ active: activeProject === project }"
+          @click="setProject(project)"
+          x-text="project"
+        ></button>
+      </template>
+    </div>
+  </header>
+
+  <!-- ── Main content ─────────────────────────────────────────────────────── -->
+  <main class="cockpit-main">
+
+    <!-- Loading state -->
+    <div x-show="loading" class="initiative-grid">
+      <template x-for="i in 6" :key="i">
+        <div class="panel" style="padding: 12px 14px; border-left: 3px solid #1e2235;">
+          <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="height: 9px; width: 35%; margin-bottom: 12px;"></div>
+          <div class="flex gap-1">
+            <div class="skeleton" style="height: 16px; width: 40px;"></div>
+            <div class="skeleton" style="height: 16px; width: 40px;"></div>
+            <div class="skeleton" style="height: 16px; width: 40px;"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Error state -->
+    <div x-show="!loading && error" class="empty-state">
+      <div style="color: #ef4444; margin-bottom: 4px;">error</div>
+      <div x-text="error"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div x-show="!loading && !error && totalCount === 0" class="empty-state">
+      no initiatives found
+    </div>
+
+    <!-- Content -->
+    <div x-show="!loading && !error && totalCount > 0">
+
+      <!-- Section label -->
+      <div class="section-label">
+        <span x-text="activeProject === 'all' ? 'all initiatives' : activeProject"></span>
+        <span style="color:#334155; margin-left:6px;">·</span>
+        <span style="margin-left:6px;" x-text="filteredInitiatives.length + ' total'"></span>
+      </div>
+
+      <!-- Initiative grid -->
+      <div class="initiative-grid">
+        <template x-for="doc in filteredInitiatives" :key="(doc.project || '') + '/' + (doc.initiative || doc.slug || '')">
+          <div
+            x-data="initiativeCard(doc)"
+            class="initiative-card"
+            :class="[borderClass, isShipped ? 'shipped-dim' : '']"
+            @click="toggle()"
+          >
+            <!-- Card header -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <!-- Title -->
+                <div style="font-size:12px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="title"></div>
+                <!-- Project + slug -->
+                <div style="font-size:10px; color:#475569; margin-top:2px;">
+                  <span x-text="doc.project || '—'"></span>
+                  <span style="color:#2a3045; margin: 0 3px;">·</span>
+                  <span x-text="doc.initiative || doc.slug || '—'"></span>
+                </div>
+              </div>
+              <!-- Status badge -->
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="status-dot" :class="dotClass"></span>
+                <span class="badge" :class="badgeClass" x-text="statusLabel"></span>
+                <!-- Expand chevron -->
+                <svg class="expand-chevron w-3 h-3 flex-shrink-0" :class="{ open }" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Artifact pills (always visible) -->
+            <div class="flex flex-wrap gap-1 mt-2.5">
+              <template x-for="artifact in artifacts" :key="artifact.type">
+                <span class="artifact-pill" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
+              </template>
+            </div>
+
+            <!-- Expanded detail -->
+            <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" @click.stop>
+
+              <!-- Divider -->
+              <div style="height:1px; background: var(--color-border); margin: 10px 0;"></div>
+
+              <!-- Problem statement -->
+              <template x-if="problem">
+                <div style="font-size:11px; color:#64748b; line-height:1.6; margin-bottom:8px;" x-text="problem"></div>
+              </template>
+
+              <!-- Tags -->
+              <template x-if="tags.length > 0">
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <template x-for="tag in tags" :key="tag">
+                    <span class="tag" x-text="tag"></span>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Artifact detail rows -->
+              <div>
+                <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:#334155; margin-bottom:4px;">artifacts</div>
+                <template x-for="artifact in artifacts" :key="artifact.type">
+                  <div class="artifact-row">
+                    <svg x-show="artifact.present" class="flex-shrink-0" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <circle cx="5" cy="5" r="4" fill="#4ade8022"/>
+                      <path d="M3 5l1.5 1.5L7 3.5" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <svg x-show="!artifact.present" class="flex-shrink-0" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <circle cx="5" cy="5" r="4" fill="#33415522"/>
+                      <path d="M3.5 3.5l3 3M6.5 3.5l-3 3" stroke="#475569" stroke-width="1.2" stroke-linecap="round"/>
+                    </svg>
+                    <span :class="artifact.present ? 'artifact-present' : 'artifact-absent'" x-text="artifact.type"></span>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Path -->
+              <div style="margin-top:8px; font-size:9px; color:#2a3045; word-break:break-all;" x-text="doc.project + '/' + doc.initiative"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
