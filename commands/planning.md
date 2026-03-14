@@ -37,12 +37,12 @@ Try in order:
 
 **If inside a repo (has `.git`):**
 ```bash
-REPO=$(basename $(git rev-parse --show-toplevel 2>/dev/null))
-ls ~/.claude/initiatives/$REPO/*/prd.md 2>/dev/null
+MISSION=$(basename $(git rev-parse --show-toplevel 2>/dev/null))
+ls ~/.claude/initiatives/$MISSION/*/prd.md 2>/dev/null
 ```
 - Exactly 1 result → use it
 - Multiple → list and ask the user to choose
-- None → try without repo prefix
+- None → try without mission prefix
 
 **If nothing found:**
 ```
@@ -52,12 +52,17 @@ Run /launchpad:discovery to create a PRD before planning.
 
 ### Read context
 
-1. Read `prd.md` in full — pay special attention to:
+Read these **in parallel**:
+
+1. `prd.md` in full — pay special attention to:
    - `## Requirements` — functional requirements (R<N>) that define the contract. These are what the review validates.
    - `## Technical Specs` — implementation guidance (stack, patterns, constraints, entry points, technical decisions). Use this to inform deliverable prompts — it's the detail that used to live inside requirements.
-2. Read `.claude/project.md` or `CLAUDE.md` from the target repo — extract build command,
+2. `.claude/project.md` or `CLAUDE.md` from the target repo — extract build command,
    test command, hot files, stack, branch conventions
-3. If none found: `Warning: no project config — using only the PRD as context`
+   - If none found: `Warning: no project config — using only the PRD as context`
+
+> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 
 ### Check for review.md (amendment mode)
 
@@ -115,8 +120,8 @@ Warning: this PRD looks like it covers multiple independent features.
 A plan with this scope will produce vague, oversized deliverables.
 
 Consider going back to /launchpad:discovery to split this into separate PRDs:
-  /launchpad:discovery <project>/<feature-1>
-  /launchpad:discovery <project>/<feature-2>
+  /launchpad:discovery <mission>/<feature-1>
+  /launchpad:discovery <mission>/<feature-2>
 
 Continue anyway? (The plan will be larger and less precise.)
 ```

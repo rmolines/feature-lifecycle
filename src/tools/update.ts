@@ -17,12 +17,12 @@ function triggerReindex(): void {
 }
 
 function resolveDocPath(
-  project: string,
-  slug: string,
+  mission: string,
+  module: string,
   file: string
 ): string {
   const root = getInitiativesRoot();
-  return join(root, project, slug, file);
+  return join(root, mission, module, file);
 }
 
 export function register(server: McpServer): void {
@@ -31,8 +31,8 @@ export function register(server: McpServer): void {
     "init_update_fields",
     "Merges new frontmatter fields into an existing initiative document, validates against schema, then writes back",
     {
-      project: z.string().describe("Project slug (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z
         .string()
         .describe(
@@ -42,8 +42,8 @@ export function register(server: McpServer): void {
         .record(z.unknown())
         .describe("Fields to update. New values override existing; omitted fields are preserved."),
     },
-    async ({ project, slug, file, fields }) => {
-      const filePath = resolveDocPath(project, slug, file);
+    async ({ mission, module, file, fields }) => {
+      const filePath = resolveDocPath(mission, module, file);
 
       // Check file exists
       if (!existsSync(filePath)) {
@@ -147,8 +147,8 @@ export function register(server: McpServer): void {
     "init_update_section",
     "Replaces the content of a specific markdown section (## Heading) in an initiative document",
     {
-      project: z.string().describe("Project slug (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z.string().describe("Document filename (e.g. 'draft.md', 'prd.md')"),
       heading: z
         .string()
@@ -157,8 +157,8 @@ export function register(server: McpServer): void {
         ),
       content: z.string().describe("New content for the section (without the heading line itself)"),
     },
-    async ({ project, slug, file, heading, content }) => {
-      const filePath = resolveDocPath(project, slug, file);
+    async ({ mission, module, file, heading, content }) => {
+      const filePath = resolveDocPath(mission, module, file);
 
       // Check file exists
       if (!existsSync(filePath)) {

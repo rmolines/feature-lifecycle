@@ -1,5 +1,5 @@
 ---
-description: "Strategic layer above discovery. Transforms a product idea into a validated vision with sequenced milestones that feed into /launchpad:discovery."
+description: "Strategic layer above discovery. Transforms a product idea into a validated mission with sequenced stages that feed into /launchpad:discovery."
 argument-hint: "slug, idea, --finalize, or --status"
 ---
 
@@ -18,7 +18,7 @@ Input: $ARGUMENTS — slug, idea, question, `--finalize`, or empty.
 
 ---
 
-## How to think about vision
+## How to think about mission
 
 Vision is a **strategic risk reduction engine**. Discovery reduces risk at the feature
 level (will this feature work?). Vision reduces risk at the product level:
@@ -29,11 +29,11 @@ level (will this feature work?). Vision reduces risk at the product level:
 - How does this reach users? (distribution risk)
 - Can we sustain this? (business model risk)
 
-The output is a `vision.md` — a declarative roadmap that the human consumes visually
-(via vision-view.sh HTML visualization) to decide which milestone to attack next. Each milestone
+The output is a `mission.md` — a declarative roadmap that the human consumes visually
+(via mission-view.sh HTML visualization) to decide which stage to attack next. Each stage
 links to a `/discovery` entry.
 
-**Vision is not consumed by agents.** It's consumed by the human to make strategic
+**Mission is not consumed by agents.** It's consumed by the human to make strategic
 decisions. This is fundamentally different from a PRD, which is an execution contract
 for agents.
 
@@ -45,7 +45,7 @@ Same as discovery — sparring partner, not a form to fill out. But calibrated f
 strategic conversation:
 
 - **Challenge the thesis.** "Why would someone use this instead of what they already do?"
-- **Challenge the sequencing.** "You have M3 depending on M1, but M3 is where the
+- **Challenge the sequencing.** "You have S3 depending on S1, but S3 is where the
   retention hypothesis lives — should it come earlier?"
 - **Challenge the audience.** "You say 'cyclists' but that's everyone from commuters to
   weekend riders to delivery workers — which one are you actually building for first?"
@@ -60,16 +60,16 @@ One question at a time. Justify before asking. Push back when something doesn't 
 
 ### Filesystem structure
 
-Visions live under `~/.claude/initiatives/<project>/`. The vision.md sits at the
-project root, milestones are subdirectories:
+Missions live under `~/.claude/initiatives/<mission>/`. The mission.md sits at the
+mission root, stages are subdirectories:
 
 ```
 ~/.claude/initiatives/ciclosp/
-  vision.md                          ← this command's artifact
-  cycles/                            ← vision-level investigation cycles
+  mission.md                         ← this command's artifact
+  cycles/                            ← mission-level investigation cycles
     01-framing-thesis.md
     02-research-market.md
-  mvp-mapa/                          ← milestone → /discovery handles this
+  mvp-mapa/                          ← stage → /discovery handles this
     draft.md or prd.md
   navegacao/
     draft.md or prd.md
@@ -77,10 +77,13 @@ project root, milestones are subdirectories:
 
 ### Parse arguments
 
-- Simple slug → project name. Look for `~/.claude/initiatives/<slug>/vision.md`
+- Simple slug → mission name. Look for `~/.claude/initiatives/<slug>/mission.md`
+
+> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view
-- Empty → show portfolio view if visions exist, then ask what to explore
+- Empty → show portfolio view if missions exist, then ask what to explore
 
 ### Portfolio view
 
@@ -88,41 +91,41 @@ When called with `--status` or with no arguments:
 
 ```bash
 for dir in ~/.claude/initiatives/*/; do
-  [ -f "$dir/vision.md" ] || continue
-  project=$(basename "$dir")
-  status=$(grep "^status:" "$dir/vision.md" | head -1 | sed 's/^status: //')
-  milestones=$(ls -d "$dir"/*/draft.md "$dir"/*/prd.md 2>/dev/null | wc -l)
-  echo "$project  $status  ${milestones} milestones"
+  [ -f "$dir/mission.md" ] || continue
+  mission=$(basename "$dir")
+  status=$(grep "^status:" "$dir/mission.md" | head -1 | sed 's/^status: //')
+  stages=$(ls -d "$dir"/*/draft.md "$dir"/*/prd.md 2>/dev/null | wc -l)
+  echo "$mission  $status  ${stages} stages"
 done
 ```
 
 Present as:
 ```
-Visions:
+Missions:
 
-  ciclosp       draft       → 4 milestones, 2 risks pending
-  meu-saas      validated   → 3 milestones, ready for discovery
+  ciclosp       draft       → 4 stages, 2 risks pending
+  meu-saas      validated   → 3 stages, ready for discovery
   side-project  archived    → shipped
 
 What do you want to work on?
 ```
 
-Also show milestone status for each vision by checking filesystem:
+Also show stage status for each mission by checking filesystem:
 ```
   ciclosp:
-    M1 mvp-mapa     prd.md ready  → /launchpad:planning ciclosp/mvp-mapa
-    M2 navegacao     draft.md      → /launchpad:discovery ciclosp/navegacao
-    M3 comunidade    not started   → /launchpad:discovery ciclosp/comunidade
-    M4 launch        not started   → /launchpad:discovery ciclosp/launch
+    S1 mvp-mapa     prd.md ready  → /launchpad:planning ciclosp/mvp-mapa
+    S2 navegacao     draft.md      → /launchpad:discovery ciclosp/navegacao
+    S3 comunidade    not started   → /launchpad:discovery ciclosp/comunidade
+    S4 launch        not started   → /launchpad:discovery ciclosp/launch
 ```
 
 ### Route
 
-- **`vision.md` exists with `status: draft`** → resume. Read vision, list completed cycles,
+- **`mission.md` exists with `status: draft`** → resume. Read mission, list completed cycles,
   ask which risk to tackle next.
-- **`vision.md` exists with `status: validated`** → already finalized.
-  Show milestone status and suggest next `/discovery` to run.
-- **Nothing exists** → new vision. Start with framing.
+- **`mission.md` exists with `status: validated`** → already finalized.
+  Show stage status and suggest next `/discovery` to run.
+- **Nothing exists** → new mission. Start with framing.
 
 ---
 
@@ -157,19 +160,19 @@ who ride daily and need reliable route info" is.
 Separate primary (build for them first) from secondary (they'll benefit but aren't
 the design target).
 
-### Sketch milestones
+### Sketch stages
 
-Propose an initial milestone sequence. Each milestone should:
-- **Deliver value independently** — if you stop after M1, something useful exists
-- **Validate a specific hypothesis** — each milestone has its own hypothesis
+Propose an initial stage sequence. Each stage should:
+- **Deliver value independently** — if you stop after S1, something useful exists
+- **Validate a specific hypothesis** — each stage has its own hypothesis
 - **Have a clear dependency chain** — what must exist before this can be built
-- **Have its own kill condition** — what proves this milestone shouldn't be built
+- **Have its own kill condition** — what proves this stage shouldn't be built
 
-The first milestone is always the MVP — the minimum that tests the core thesis.
+The first stage is always the MVP — the minimum that tests the core thesis.
 
 Push back if:
-- A milestone is too big (would need 9+ deliverables in planning)
-- A milestone doesn't deliver independent value
+- A stage is too big (would need 9+ deliverables in planning)
+- A stage doesn't deliver independent value
 - The sequencing doesn't match the risk profile (highest risk should come earliest)
 
 ### Sketch strategy
@@ -194,19 +197,19 @@ Risks come in two flavors. Vision handles one, discovery handles the other:
 | Business model | Monetization, sustainability | Analysis cycle |
 | Audience | Who actually wants this | Interview cycle |
 
-**Execution risks (vision assigns these as blockers to milestones):**
+**Execution risks (mission assigns these as blockers to stages):**
 
 | Risk type | Example | Where it's resolved |
 |---|---|---|
-| Technical feasibility | "Does the API exist?" | Spike in `/discovery` for the blocked milestone |
+| Technical feasibility | "Does the API exist?" | Spike in `/discovery` for the blocked stage |
 | Integration | "Can we consume this data format?" | Spike in `/discovery` |
 | Performance | "Is this computationally viable?" | Spike in `/discovery` |
 
 When you identify a technical/execution risk, **don't propose investigating it here.**
-Instead, record it as a blocker on the relevant milestone:
+Instead, record it as a blocker on the relevant stage:
 
 ```markdown
-### M1: MVP Mapa + Roteamento
+### S1: MVP Mapa + Roteamento
 - **Hypothesis:** ...
 - **Entry:** /launchpad:discovery ciclosp/mvp-mapa
 - **Depends on:** nada
@@ -217,25 +220,25 @@ Instead, record it as a blocker on the relevant milestone:
 ```
 
 These blockers become the first investigation cycles when the user runs
-`/discovery` for that milestone.
+`/discovery` for that stage.
 
 ### Save the framing cycle
 
-Write `cycles/01-framing-<desc>.md` with: thesis, audience, milestones, risks identified.
+Write `cycles/01-framing-<desc>.md` with: thesis, audience, stages, risks identified.
 
-Create `vision.md` from template (`templates/vision-template.md`):
+Create `mission.md` from template (`templates/mission-template.md`):
 - Set frontmatter: `id`, `status: draft`, `created`, `updated`, `tags`
 - Fill **Thesis** + **Kill condition**
 - Fill **Audience**
-- Fill **Milestones** with initial sketch
+- Fill **Stages** with initial sketch
 - Fill **Strategy** with hypotheses
 - Leave risks tables for investigation
 
-After saving vision.md, generate the HTML visualization:
+After saving mission.md, generate the HTML visualization:
 ```bash
-bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
 ```
-This opens the vision in the browser for human review.
+This opens the mission in the browser for human review.
 
 Report state and suggest next cycle or `/clear`.
 
@@ -245,13 +248,13 @@ Report state and suggest next cycle or `/clear`.
 
 Each time the user returns with `/launchpad:vision <slug>`:
 
-1. Read `vision.md` (current state)
+1. Read `mission.md` (current state)
 2. List completed cycles
 3. Propose the next risk to investigate, or ask the user which one
 
 ### Cycle types
 
-Vision only runs **strategic** cycles. Technical investigation belongs in `/discovery`.
+Mission only runs **strategic** cycles. Technical investigation belongs in `/discovery`.
 
 #### research — Market/competitive research
 
@@ -262,8 +265,8 @@ Launch 2-3 parallel subagents (model: sonnet) with WebSearch:
 - **Agent B:** adjacent markets, analogies from other domains
 - **Agent C:** distribution channels, how similar products reach users
 
-Synthesize results. Present to the human, discuss implications for thesis and milestones.
-Update vision.md. Save cycle as `cycles/NN-research-<desc>.md`.
+Synthesize results. Present to the human, discuss implications for thesis and stages.
+Update mission.md. Save cycle as `cycles/NN-research-<desc>.md`.
 
 #### analysis — Strategic analysis
 
@@ -272,33 +275,33 @@ When: business model, platform choice, build-vs-buy, sequencing trade-offs.
 - Define the analysis framework (pros/cons, impact/effort, scenario modeling)
 - Execute analysis with the human (structured conversation)
 - Document decision and rationale
-- Update vision.md
+- Update mission.md
 
-**What vision does NOT do:**
-- **Spikes** — technical validation belongs in `/discovery` for the relevant milestone
-- **Interviews** — if needed at vision level, prepare the questions and let the human
+**What mission does NOT do:**
+- **Spikes** — technical validation belongs in `/discovery` for the relevant stage
+- **Interviews** — if needed at mission level, prepare the questions and let the human
   conduct them externally, then synthesize in the next session. Don't create a formal
   interview cycle — just incorporate the input into the conversation.
 
 ### After every cycle
 
-Update vision.md:
+Update mission.md:
 - **Thesis**: refine if the cycle changed the core hypothesis
-- **Milestones**: add/remove/reorder if the cycle revealed new information
+- **Stages**: add/remove/reorder if the cycle revealed new information
 - **Strategy**: update decisions that were validated or invalidated
 - **Risks validated**: add row
 - **Risks accepted**: move risks the human decided to accept
 - **YAML frontmatter**: update `updated: <today YYYY-MM-DD>`
 
-After updating vision.md, regenerate the HTML visualization:
+After updating mission.md, regenerate the HTML visualization:
 ```bash
-bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
 ```
 
 Report state: risks validated (N/M), pending risks, suggested next cycle.
 Recommend `/clear` if the session is getting long.
 
-**If all strategic risks are addressed and the vision feels solid, proactively suggest
+**If all strategic risks are addressed and the mission feels solid, proactively suggest
 finalizing.** Don't force more cycles.
 
 ---
@@ -307,9 +310,9 @@ finalizing.** Don't force more cycles.
 
 Triggered by `--finalize`, or when you propose it and the human agrees.
 
-### Vision Quality Gate
+### Mission Quality Gate
 
-Read the full vision and validate each item. **Hard gate — do not change status to
+Read the full mission and validate each item. **Hard gate — do not change status to
 `validated` if any item fails.**
 
 **1. Thesis is falsifiable.**
@@ -323,12 +326,12 @@ The kill condition must be something that could actually be true — not a straw
 Fail: "If nobody wants to ride bikes" (obviously false)
 Pass: "If CET data is not programmatically accessible and no alternative source exists"
 
-**3. Milestones are sequenced by risk.**
-The highest-risk hypothesis should be validated earliest. If M3 has the biggest
-uncertainty but depends on M1 and M2, challenge whether M3 can be tested sooner.
+**3. Stages are sequenced by risk.**
+The highest-risk hypothesis should be validated earliest. If S3 has the biggest
+uncertainty but depends on S1 and S2, challenge whether S3 can be tested sooner.
 
-**4. Each milestone has independent value.**
-If you stop after any milestone, something useful exists. No milestone is pure
+**4. Each stage has independent value.**
+If you stop after any stage, something useful exists. No stage is pure
 infrastructure with no user value.
 
 **5. Strategy decisions are explicit.**
@@ -342,29 +345,29 @@ able to make UX decisions based on the audience definition.
 If any item fails: report which items failed with specific gaps.
 Ask the human to resolve them.
 
-### Generate validated vision
+### Generate validated mission
 
 If all 6 pass:
-- Update vision.md frontmatter: `status: validated`, `updated: <today>`
+- Update mission.md frontmatter: `status: validated`, `updated: <today>`
 - Consolidate language (remove hedging)
-- Ensure milestones have correct entry commands
+- Ensure stages have correct entry commands
 
 Generate the final HTML visualization:
 ```bash
-bash ~/git/launchpad/scripts/vision-view.sh <path/to/vision.md>
+bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
 ```
 
 ### Close
 
-Report: thesis (one line), milestones (count), risks validated (count),
+Report: thesis (one line), stages (count), risks validated (count),
 risks accepted (count), cycles completed (count).
 
 Suggest next step:
 ```
-Vision validated. Next steps:
+Mission validated. Next steps:
 
-  /launchpad:discovery <project>/<first-milestone>  ← start here
-  /launchpad:vision <project> --status              ← check progress anytime
+  /launchpad:discovery <mission>/<first-stage>  ← start here
+  /launchpad:vision <mission> --status          ← check progress anytime
 ```
 
 Recommend `/clear` before continuing.
@@ -377,21 +380,21 @@ Recommend `/clear` before continuing.
 - **Justify before asking.** State what you're trying to decide.
 - **Push back.** Challenge thesis, sequencing, audience specificity. This is your job.
 - **Calibrate depth.** Synthesize if you have data. Extract only when signal is missing.
-- **vision.md is the persistent brain.** Always update after each cycle.
-- **Cycles are audit trail.** The vision is what matters between sessions.
-- **Vision plans, discovery executes.** Never run spikes or technical investigation here.
-  Assign them as blockers on the relevant milestone.
+- **mission.md is the persistent brain.** Always update after each cycle.
+- **Cycles are audit trail.** The mission is what matters between sessions.
+- **Mission plans, discovery executes.** Never run spikes or technical investigation here.
+  Assign them as blockers on the relevant stage.
 - **Subagents use model: sonnet.** Never opus in a subagent.
 - **No mockups, no spikes.** Both are feature-level — they belong in `/discovery`.
 - **Proactively suggest finalizing** when risks are covered.
-- **Milestones are declarative.** Status comes from filesystem, not from vision.md.
+- **Stages are declarative.** Status comes from filesystem, not from mission.md.
 
 ---
 
 ## When NOT to use
 
-- Quick vision idea capture (no conversation needed) → use `/draft`
-- Single feature in existing project → use `/launchpad:discovery` directly
+- Quick mission idea capture (no conversation needed) → use `/draft`
+- Single feature in existing mission → use `/launchpad:discovery` directly
 - Bug/fix → use `/debug` or `/fix`
-- Already have a vision, need a PRD → use `/launchpad:discovery <project>/<milestone>`
+- Already have a mission, need a PRD → use `/launchpad:discovery <mission>/<stage>`
 - Already have a PRD → use `/launchpad:planning`

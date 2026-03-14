@@ -1,5 +1,5 @@
 ---
-description: "Quick idea capture — notepad for initiatives"
+description: "Quick idea capture — notepad for modules"
 argument-hint: "<slug> [idea] or <slug> --evolves <original-slug> [idea]"
 ---
 
@@ -9,13 +9,13 @@ You are a quick-capture assistant. Your job is to park an idea as fast as possib
 
 ## On entry: detect context
 
-Detect repo name:
+Detect mission name:
 ```bash
-PROJECT=$(grep "^alias:" .claude/project.md 2>/dev/null | sed 's/^alias: //' | head -1)
-if [ -z "$PROJECT" ]; then
-  PROJECT=$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)
+MISSION=$(grep "^alias:" .claude/project.md 2>/dev/null | sed 's/^alias: //' | head -1)
+if [ -z "$MISSION" ]; then
+  MISSION=$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)
 fi
-DISCOVERIES_DIR="$HOME/.claude/initiatives/$PROJECT"
+MODULES_DIR="$HOME/.claude/initiatives/$MISSION"
 TODAY=$(date +%Y-%m-%d)
 ```
 
@@ -29,7 +29,7 @@ Parse the arguments passed to this skill:
 
 Run:
 ```bash
-ls "$HOME/.claude/initiatives/$PROJECT/" 2>/dev/null | head -20
+ls "$HOME/.claude/initiatives/$MISSION/" 2>/dev/null | head -20
 ```
 
 List existing drafts (drafts only — files named `draft.md`). Then ask: "What do you want to capture? Give me a slug and one-liner (e.g. `fast-login fix the login flow`)."
@@ -38,7 +38,7 @@ List existing drafts (drafts only — files named `draft.md`). Then ask: "What d
 
 Check if draft already exists:
 ```bash
-DRAFT_PATH="$HOME/.claude/initiatives/$PROJECT/<slug>/draft.md"
+DRAFT_PATH="$HOME/.claude/initiatives/$MISSION/<slug>/draft.md"
 ```
 
 **If it exists:** append the one-liner as a new line to the `## Problem` section and update `updated:` in frontmatter. Confirm:
@@ -50,7 +50,7 @@ Added to existing draft: `<slug>`
 ```yaml
 ---
 id: <slug>
-project: <PROJECT>
+mission: <MISSION>
 created: <TODAY>
 updated: <TODAY>
 tags: []
@@ -64,7 +64,7 @@ Fill `## Problem` with the one-liner as-is. Leave `## Solution`, `## Out-of-scop
 Confirm:
 ```
 Draft parked: `<slug>`
-Resume: `/launchpad:discovery <slug>` or `/launchpad:vision <slug>`
+Resume: `/launchpad:discovery <slug>` or `/launchpad:vision <slug>` (for a new mission)
 ```
 
 ## Minimal conversation mode (slug only)
@@ -81,16 +81,16 @@ Maximum 2 questions total. Then save and confirm same as silent mode.
 
 First, verify the original exists:
 ```bash
-ls "$HOME/.claude/initiatives/$PROJECT/<original-slug>/" 2>/dev/null
+ls "$HOME/.claude/initiatives/$MISSION/<original-slug>/" 2>/dev/null
 ```
 
-If it doesn't exist: warn "Original slug `<original-slug>` not found in $PROJECT. Falling back to normal draft mode." Then proceed as minimal conversation mode.
+If it doesn't exist: warn "Original slug `<original-slug>` not found in $MISSION. Falling back to normal draft mode." Then proceed as minimal conversation mode.
 
 If it exists: create `draft.md` with `supersedes: <original-slug>` in frontmatter:
 ```yaml
 ---
 id: <slug>
-project: <PROJECT>
+mission: <MISSION>
 created: <TODAY>
 updated: <TODAY>
 tags: []

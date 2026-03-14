@@ -5,7 +5,7 @@ created: <date>
 updated: <date>
 tags: []
 ---
-# Vision: <name>
+# Mission: <name>
 
 ## Thesis
 A aposta central do projeto, em uma frase falsificável.
@@ -18,27 +18,27 @@ O que prova que a tese está errada. Se isso for verdade, mata o projeto.
 - **Primary:** quem mais se beneficia, e por quê
 - **Secondary:** quem mais usa, mas não é o foco principal
 
-## Milestones
+## Stages
 
-### M1: <name>
+### S1: <name>
 O mínimo que entrega valor sozinho.
-- **Hypothesis:** qual hipótese esse milestone valida
-- **Entry:** /launchpad:discovery <project>/<milestone-slug>
-- **Depends on:** (nada, ou M anterior)
-- **Kill condition:** o que mata esse milestone específico
+- **Hypothesis:** qual hipótese esse stage valida
+- **Entry:** /launchpad:discovery <mission>/<stage-slug>
+- **Depends on:** (nada, ou S anterior)
+- **Kill condition:** o que mata esse stage específico
 - **Blockers:**
   - [ ] <risk/spike que precisa ser resolvido no /discovery antes de avançar>
 
-### M2: <name>
+### S2: <name>
 - **Hypothesis:** ...
-- **Entry:** /launchpad:discovery <project>/<milestone-slug>
-- **Depends on:** M1
+- **Entry:** /launchpad:discovery <mission>/<stage-slug>
+- **Depends on:** S1
 - **Kill condition:** ...
 - **Blockers:**
   - [ ] ...
 
 ## Strategy
-Decisões estratégicas transversais que afetam todos os milestones.
+Decisões estratégicas transversais que afetam todos os stages.
 - **Platform:** ...
 - **Monetization:** ...
 - **Distribution:** ...

@@ -8,11 +8,16 @@ PLAN_FILE=""
 RESULTS_FILE=""
 
 # Parse arguments
+NO_OPEN=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --results)
       RESULTS_FILE="$2"
       shift 2
+      ;;
+    --no-open)
+      NO_OPEN=1
+      shift
       ;;
     *)
       PLAN_FILE="$1"
@@ -279,9 +284,11 @@ PLAN_JSON="{\"name\":\"${PLAN_NAME_ESC}\",\"date\":\"${PLAN_DATE_ESC}\",\"tasks\
 
 # ─── Inject into HTML template ───────────────────────────────────────────────
 
-TIMESTAMP=$(date +%s)
-OUTPUT="/tmp/plan-view-${TIMESTAMP}.html"
-JSON_TMP="/tmp/plan-view-json-${TIMESTAMP}.json"
+# Derive stable output name from plan file path (reuses browser tab)
+PLAN_DIR="$(dirname "$PLAN_FILE")"
+PLAN_SLUG="$(basename "$(dirname "$PLAN_DIR")")-$(basename "$PLAN_DIR")"
+OUTPUT="/tmp/plan-view-${PLAN_SLUG}.html"
+JSON_TMP="/tmp/plan-view-json-${PLAN_SLUG}.json"
 
 # Write JSON to temp file to avoid awk -v backslash-stripping issues
 printf '%s' "$PLAN_JSON" > "$JSON_TMP"
@@ -310,5 +317,7 @@ rm -f "$JSON_TMP"
 
 # ─── Open in browser and report ──────────────────────────────────────────────
 
-open "$OUTPUT"
+if [[ $NO_OPEN -eq 0 ]]; then
+  open "$OUTPUT"
+fi
 echo "$OUTPUT"

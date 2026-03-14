@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cockpit — Launchpad Workspace</title>
+<title>Mission Control — Launchpad Workspace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -68,7 +68,7 @@
   .badge-wip      { background: #1c1700; color: #fbbf24; border: 1px solid #78350f; }
   .badge-review   { background: #1a1625; color: #c084fc; border: 1px solid #4a1d96; }
 
-  .project-badge {
+  .mission-badge {
     font-size: 9px;
     padding: 1px 5px;
     border-radius: 3px;
@@ -76,10 +76,10 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
-  .project-fl       { background: rgba(99,102,241,0.15); color: #a5b4fc; }
-  .project-ch       { background: rgba(245,158,11,0.15); color: #fcd34d; }
-  .project-pantheon { background: rgba(16,185,129,0.15); color: #6ee7b7; }
-  .project-default  { background: rgba(148,163,184,0.10); color: #94a3b8; }
+  .mission-fl       { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+  .mission-ch       { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .mission-pantheon { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+  .mission-default  { background: rgba(148,163,184,0.10); color: #94a3b8; }
 
   .tag { display: inline-flex; align-items: center; padding: 0 5px; background: #131827; color: #475569; border: 1px solid #1e2235; border-radius: 3px; font-size: 10px; margin-right: 3px; }
 
@@ -87,12 +87,12 @@
   .phase-col { min-width: 190px; flex-shrink: 0; }
   .phase-col-header { border-bottom: 1px solid #1a1d2e; padding-bottom: 10px; margin-bottom: 10px; }
 
-  .initiative-card {
+  .module-card {
     cursor: pointer;
     transition: all 0.15s ease;
     border-left-width: 3px;
   }
-  .initiative-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
+  .module-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
 
   .border-seed      { border-left-color: #475569; }
   .border-exploring { border-left-color: #6366f1; }
@@ -168,8 +168,8 @@
   .progress-fill.complete { background: #22c55e; }
   .progress-fill.high     { background: #60a5fa; }
 
-  /* ── Pipeline project group ──────────────────────────────────── */
-  .pipeline-project-hdr {
+  /* ── Pipeline mission group ──────────────────────────────────── */
+  .pipeline-mission-hdr {
     font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -183,7 +183,7 @@
     align-items: center;
     gap: 5px;
   }
-  .pipeline-project-hdr:first-child { margin-top: 0; border-top: none; }
+  .pipeline-mission-hdr:first-child { margin-top: 0; border-top: none; }
 
   /* ── Needs Attention / Limbo ─────────────────────────────────── */
   .attention-table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -218,17 +218,17 @@
 <header class="flex-shrink-0 border-b border-[#1e2235] bg-[#0a0d16]">
   <div class="flex items-center justify-between px-5 py-2.5">
     <div class="flex items-center gap-4">
-      <span class="text-indigo-400 font-semibold text-sm tracking-tight">cockpit://</span>
+      <span class="text-indigo-400 font-semibold text-sm tracking-tight">mission-control://</span>
       <span class="text-slate-700 text-xs" id="hdr-date"></span>
     </div>
     <div class="flex items-center gap-5 text-xs">
       <div class="flex items-center gap-1.5 text-slate-500">
-        <span class="text-slate-600">projects</span>
-        <span class="text-slate-300 font-semibold" id="hdr-projects">—</span>
+        <span class="text-slate-600">missions</span>
+        <span class="text-slate-300 font-semibold" id="hdr-missions">—</span>
       </div>
       <div class="flex items-center gap-1.5 text-slate-500">
-        <span class="text-slate-600">initiatives</span>
-        <span class="text-slate-300 font-semibold" id="hdr-initiatives">—</span>
+        <span class="text-slate-600">modules</span>
+        <span class="text-slate-300 font-semibold" id="hdr-modules">—</span>
       </div>
       <div class="flex items-center gap-1.5 text-slate-500">
         <span class="text-slate-600">plans</span>
@@ -251,15 +251,15 @@
 ════════════════════════════════════════════════════════════════════════ -->
 <div id="tab-overview" class="cockpit-tab scroll active overflow-y-auto flex-1 p-5">
   <div id="filter-banner"></div>
-  <!-- Project cards -->
-  <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-3">Projects</div>
-  <div id="overview-projects" class="flex flex-wrap gap-3 mb-8"></div>
+  <!-- Mission cards -->
+  <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-3">Missions</div>
+  <div id="overview-missions" class="flex flex-wrap gap-3 mb-8"></div>
   <!-- Needs Attention (populated by renderOverview) -->
   <div id="overview-attention"></div>
   <!-- Limbo (populated by renderOverview) -->
   <div id="overview-limbo"></div>
-  <!-- Recent Initiatives -->
-  <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-3">Recent Initiatives</div>
+  <!-- Recent Modules -->
+  <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-3">Recent Modules</div>
   <div id="overview-activity" class="panel overflow-hidden"></div>
 </div>
 
@@ -296,18 +296,18 @@
 ════════════════════════════════════════════════════════════════════════ -->
 <div id="tab-schema" class="cockpit-tab overflow-hidden flex-col">
   <div class="flex flex-1 overflow-hidden">
-    <!-- Sidebar: project list -->
+    <!-- Sidebar: mission list -->
     <aside class="w-52 flex-shrink-0 border-r border-[#1e2235] bg-[#0a0d16] overflow-y-auto">
       <div class="px-3 pt-4 pb-2">
-        <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-2 px-2">Projects</div>
-        <div id="schema-project-list" class="space-y-0.5"></div>
+        <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-2 px-2">Missions</div>
+        <div id="schema-mission-list" class="space-y-0.5"></div>
       </div>
     </aside>
     <!-- Main: record list -->
     <main class="flex-1 flex overflow-hidden">
       <div class="flex-1 flex flex-col overflow-hidden" id="schema-main">
         <div class="flex-1 flex items-center justify-center text-slate-700 text-sm">
-          Select a project from the sidebar
+          Select a mission from the sidebar
         </div>
       </div>
       <!-- Detail panel -->
@@ -362,18 +362,18 @@ function formatDate(iso) {
   } catch(e) { return iso; }
 }
 
-function projectClass(project) {
-  if (!project) return 'project-default';
-  if (project === 'fl') return 'project-fl';
-  if (project === 'ch') return 'project-ch';
-  if (project === 'pantheon-ai' || project === 'pantheon') return 'project-pantheon';
-  return 'project-default';
+function missionClass(mission) {
+  if (!mission) return 'mission-default';
+  if (mission === 'fl') return 'mission-fl';
+  if (mission === 'ch') return 'mission-ch';
+  if (mission === 'pantheon-ai' || mission === 'pantheon') return 'mission-pantheon';
+  return 'mission-default';
 }
 
-function projectLabel(project) {
-  if (!project) return '—';
-  if (project === 'pantheon-ai') return 'pantheon';
-  return project;
+function missionLabel(mission) {
+  if (!mission) return '—';
+  if (mission === 'pantheon-ai') return 'pantheon';
+  return mission;
 }
 
 const PHASE_LABELS = {
@@ -451,12 +451,12 @@ function switchTab(name) {
 function initHeader() {
   const genAt = DATA.generated_at || '';
   document.getElementById('hdr-date').textContent = genAt ? formatDate(genAt) : '';
-  // Use repo-scanned project count if available, fallback to discovery-derived
-  const projectCount = DATA.repo_project_count !== undefined
-    ? DATA.repo_project_count
-    : (DATA.projects || []).length;
-  document.getElementById('hdr-projects').textContent = projectCount;
-  document.getElementById('hdr-initiatives').textContent = (DATA.initiatives || []).length;
+  // Use repo-scanned mission count if available, fallback to discovery-derived
+  const missionCount = DATA.repo_mission_count !== undefined
+    ? DATA.repo_mission_count
+    : (DATA.missions || []).length;
+  document.getElementById('hdr-missions').textContent = missionCount;
+  document.getElementById('hdr-modules').textContent = (DATA.modules || []).length;
   document.getElementById('hdr-plans').textContent = (DATA.plans || []).length;
 }
 
@@ -494,11 +494,11 @@ function renderProgressBar(progressStr) {
 function renderOverview() {
   // Filter banner
   const banner = document.getElementById('filter-banner');
-  if (DATA.filter_project) {
+  if (DATA.filter_mission) {
     banner.innerHTML = `
       <div class="mb-4 px-3 py-2 rounded" style="background:#1a1625;border:1px solid #4a1d96;font-size:11px;">
         <span class="text-indigo-400">filter active:</span>
-        <span class="text-slate-300 ml-2">project = ${esc(DATA.filter_project)}</span>
+        <span class="text-slate-300 ml-2">mission = ${esc(DATA.filter_mission)}</span>
       </div>
     `;
   } else {
@@ -506,40 +506,40 @@ function renderOverview() {
   }
 
   // Project cards
-  const projects = DATA.projects || [];
-  const projectsEl = document.getElementById('overview-projects');
-  if (projects.length === 0) {
-    projectsEl.innerHTML = `<div class="text-slate-700 text-sm">No projects found.</div>`;
+  const missions = DATA.missions || [];
+  const missionsEl = document.getElementById('overview-missions');
+  if (missions.length === 0) {
+    missionsEl.innerHTML = `<div class="text-slate-700 text-sm">No missions found.</div>`;
   } else {
-    const activeProjects = projects.filter(p => !p.operational);
-    const operationalProjects = projects.filter(p => p.operational);
+    const activeMissions = missions.filter(p => !p.operational);
+    const operationalMissions = missions.filter(p => p.operational);
 
     let cardsHtml = '';
 
-    activeProjects.forEach(p => {
+    activeMissions.forEach(p => {
       const alias = p.alias || p.id;
       const name = p.description || p.id;
-      const milestoneLabel = p.milestone_label || p.milestone || '';
+      const stageLabel = p.stage_label || p.stage || '';
       const nextFeature = p.next_feature || '';
       const progressStr = p.progress || '';
 
       cardsHtml += `
         <div class="panel px-4 py-3" style="min-width:220px;max-width:300px;">
           <div class="flex items-center gap-2 mb-2">
-            <span class="project-badge ${projectClass(p.id)}">${esc(alias)}</span>
+            <span class="mission-badge ${missionClass(p.id)}">${esc(alias)}</span>
             <span class="text-slate-400 text-xs font-medium truncate flex-1">${esc(name)}</span>
           </div>
-          ${milestoneLabel ? `
+          ${stageLabel ? `
             <div class="flex items-center gap-1 mb-1" style="font-size:10px;">
-              <span style="color:#475569;">milestone</span>
-              <span style="color:#94a3b8;margin-left:4px;">${esc(milestoneLabel)}</span>
+              <span style="color:#475569;">stage</span>
+              <span style="color:#94a3b8;margin-left:4px;">${esc(stageLabel)}</span>
             </div>
           ` : ''}
           ${progressStr ? renderProgressBar(progressStr) : `
             <div class="flex items-center gap-2 flex-wrap mt-1">
-              ${(p.initiative_counts || {}).draft ? `<span class="badge badge-draft">${p.initiative_counts.draft} draft</span>` : ''}
-              ${(p.initiative_counts || {}).final ? `<span class="badge badge-final">${p.initiative_counts.final} final</span>` : ''}
-              ${(p.initiative_counts || {}).archived ? `<span class="badge badge-archived">${p.initiative_counts.archived} archived</span>` : ''}
+              ${(p.module_counts || {}).draft ? `<span class="badge badge-draft">${p.module_counts.draft} draft</span>` : ''}
+              ${(p.module_counts || {}).final ? `<span class="badge badge-final">${p.module_counts.final} final</span>` : ''}
+              ${(p.module_counts || {}).archived ? `<span class="badge badge-archived">${p.module_counts.archived} archived</span>` : ''}
             </div>
           `}
           ${nextFeature ? `
@@ -551,14 +551,14 @@ function renderOverview() {
       `;
     });
 
-    if (operationalProjects.length > 0) {
-      cardsHtml += operationalProjects.map(p => {
+    if (operationalMissions.length > 0) {
+      cardsHtml += operationalMissions.map(p => {
         const alias = p.alias || p.id;
         const name = p.description || p.id;
         return `
           <div class="panel px-4 py-3" style="min-width:180px;max-width:240px;opacity:0.7;">
             <div class="flex items-center gap-2">
-              <span class="project-badge project-default">${esc(alias)}</span>
+              <span class="mission-badge mission-default">${esc(alias)}</span>
               <span class="text-slate-500 text-xs truncate flex-1">${esc(name)}</span>
             </div>
             <div class="mt-2">
@@ -569,7 +569,7 @@ function renderOverview() {
       }).join('');
     }
 
-    projectsEl.innerHTML = cardsHtml;
+    missionsEl.innerHTML = cardsHtml;
   }
 
   // Needs Attention section
@@ -587,7 +587,7 @@ function renderOverview() {
             <tbody>
               ${needsAttention.map(item => `
                 <tr>
-                  <td><span class="project-badge ${projectClass(item.project || item.id)}">${esc(item.project || item.id || '—')}</span></td>
+                  <td><span class="mission-badge ${missionClass(item.mission || item.id)}">${esc(item.mission || item.id || '—')}</span></td>
                   <td>${esc(item.action || item.message || '—')}</td>
                   <td><span style="color:#64748b;font-size:10px;">${esc(item.type || '—')}</span></td>
                 </tr>
@@ -608,7 +608,7 @@ function renderOverview() {
     if (limbo.length > 0) {
       const limboBadges = limbo.map(item => {
         const label = typeof item === 'string' ? item : (item.id || item.name || String(item));
-        return `<span class="project-badge project-default" style="margin-right:4px;margin-bottom:4px;">${esc(label)}</span>`;
+        return `<span class="mission-badge mission-default" style="margin-right:4px;margin-bottom:4px;">${esc(label)}</span>`;
       }).join('');
       limboEl.innerHTML = `
         <div class="text-[10px] text-slate-600 uppercase tracking-widest mb-3 mt-2">Limbo</div>
@@ -620,29 +620,29 @@ function renderOverview() {
   }
 
   // Recent activity
-  const initiatives = (DATA.initiatives || []).slice().sort((a, b) => {
+  const modules = (DATA.modules || []).slice().sort((a, b) => {
     const da = a.updated || a.created || '';
     const db = b.updated || b.created || '';
     return db.localeCompare(da);
   }).slice(0, 10);
 
   const activityEl = document.getElementById('overview-activity');
-  if (initiatives.length === 0) {
-    activityEl.innerHTML = `<div class="p-4 text-slate-700 text-sm">No initiatives found.</div>`;
+  if (modules.length === 0) {
+    activityEl.innerHTML = `<div class="p-4 text-slate-700 text-sm">No modules found.</div>`;
     return;
   }
 
   activityEl.innerHTML = `
-    <div class="px-3 py-2 border-b border-[#1e2235] text-[10px] text-slate-600 uppercase tracking-widest">Recent Initiatives</div>
+    <div class="px-3 py-2 border-b border-[#1e2235] text-[10px] text-slate-600 uppercase tracking-widest">Recent Modules</div>
     <div class="divide-y divide-[#141720]">
-      ${initiatives.map(i => {
+      ${modules.map(i => {
         const ph = PHASE_LABELS[i.phase] || PHASE_LABELS['seed'];
         const problem = (i.problem || '').slice(0, 80) + ((i.problem || '').length > 80 ? '…' : '');
         const updDate = i.updated || i.created || '';
         return `
           <div class="flex items-center gap-3 px-3 py-2 text-xs hover:bg-[#1a1d2a] transition-colors">
             <span class="text-indigo-300 font-mono min-w-[120px]">${esc(i.id)}</span>
-            <span class="project-badge ${projectClass(i.project)}">${esc(projectLabel(i.project))}</span>
+            <span class="mission-badge ${missionClass(i.mission)}">${esc(missionLabel(i.mission))}</span>
             <span class="flex items-center gap-1.5">
               <span class="phase-dot" style="background:${ph.color};display:inline-block;width:6px;height:6px;border-radius:50%;"></span>
               <span style="color:${ph.color};font-size:10px;">${ph.label}</span>
@@ -672,7 +672,7 @@ const PHASES = [
 ];
 
 function renderPipeline() {
-  const initiatives = (DATA.initiatives || []).map(i => ({
+  const modules = (DATA.modules || []).map(i => ({
     ...i,
     phase: i.phase || 'seed',
     updated: i.updated || i.last_updated || '',
@@ -680,7 +680,7 @@ function renderPipeline() {
 
   const byPhase = {};
   PHASES.forEach(p => { byPhase[p.id] = []; });
-  initiatives.forEach(i => {
+  modules.forEach(i => {
     if (byPhase[i.phase]) byPhase[i.phase].push(i);
     else byPhase['seed'].push(i);
   });
@@ -713,31 +713,31 @@ function renderPhaseColumn(phase, items) {
   const hdrColor = (PHASE_LABELS[phase.id] || { color: '#64748b' }).color;
   const dotCls = `dot-${phase.id}`;
 
-  // Group initiatives by project
-  const projectGroups = {};
-  const projectOrder = [];
+  // Group modules by mission
+  const missionGroups = {};
+  const missionOrder = [];
   items.forEach(i => {
-    const key = i.project || 'unknown';
-    if (!projectGroups[key]) {
-      projectGroups[key] = [];
-      projectOrder.push(key);
+    const key = i.mission || 'unknown';
+    if (!missionGroups[key]) {
+      missionGroups[key] = [];
+      missionOrder.push(key);
     }
-    projectGroups[key].push(i);
+    missionGroups[key].push(i);
   });
 
   let cardsHtml = '';
   if (count === 0) {
     cardsHtml = `<div class="empty-col">—</div>`;
-  } else if (projectOrder.length === 1) {
-    // Single project — no need for project header
+  } else if (missionOrder.length === 1) {
+    // Single mission — no need for mission header
     cardsHtml = items.map(i => renderPipelineCard(i)).join('');
   } else {
-    // Multiple projects — add project separators
-    projectOrder.forEach((projKey, gi) => {
-      const projItems = projectGroups[projKey];
+    // Multiple missions — add mission separators
+    missionOrder.forEach((projKey, gi) => {
+      const projItems = missionGroups[projKey];
       cardsHtml += `
-        <div class="pipeline-project-hdr" style="${gi === 0 ? 'border-top:none;margin-top:0;' : ''}">
-          <span class="project-badge ${projectClass(projKey)}">${esc(projectLabel(projKey))}</span>
+        <div class="pipeline-mission-hdr" style="${gi === 0 ? 'border-top:none;margin-top:0;' : ''}">
+          <span class="mission-badge ${missionClass(projKey)}">${esc(missionLabel(projKey))}</span>
           <span style="color:#334155;">${projItems.length}</span>
         </div>
       `;
@@ -760,70 +760,70 @@ function renderPhaseColumn(phase, items) {
   `;
 }
 
-function renderPipelineCard(initiative) {
-  const shipped = initiative.phase === 'shipped';
+function renderPipelineCard(mod) {
+  const shipped = mod.phase === 'shipped';
   const dimClass = shipped ? 'shipped-dim' : '';
-  const idEscaped = (initiative.id || '').replace(/'/g, "\\'");
-  const tagPills = (initiative.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-  const cycleCount = initiative.cycle_count;
+  const idEscaped = (mod.id || '').replace(/'/g, "\\'");
+  const tagPills = (mod.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const cycleCount = mod.cycle_count;
   const cyclesBadge = (cycleCount !== undefined && cycleCount !== null)
     ? `<span style="color:#4f5e7a;font-size:10px;">${cycleCount} cycle${cycleCount !== 1 ? 's' : ''}</span>`
     : '';
 
   return `
-    <div class="initiative-card ${dimClass} border-${initiative.phase}"
+    <div class="module-card ${dimClass} border-${mod.phase}"
       style="background:#12141f;border-radius:4px;padding:10px 10px 8px 10px;margin-bottom:6px;cursor:pointer;"
       onclick="openPipelineModal('${idEscaped}')">
       <div class="flex items-start justify-between gap-2 mb-1">
-        <span style="color:#cbd5e1;font-size:12px;font-weight:500;line-height:1.3;">${esc(initiative.id)}</span>
-        <span class="project-badge ${projectClass(initiative.project)}" style="flex-shrink:0;margin-top:1px;">${esc(projectLabel(initiative.project))}</span>
+        <span style="color:#cbd5e1;font-size:12px;font-weight:500;line-height:1.3;">${esc(mod.id)}</span>
+        <span class="mission-badge ${missionClass(mod.mission)}" style="flex-shrink:0;margin-top:1px;">${esc(missionLabel(mod.mission))}</span>
       </div>
       ${tagPills || cyclesBadge ? `<div class="flex flex-wrap items-center gap-1 mt-1" style="min-height:16px;">${tagPills}${cyclesBadge}</div>` : ''}
-      <div style="margin-top:6px;color:#4f5e7a;font-size:10px;">${daysSince(initiative.updated)}</div>
+      <div style="margin-top:6px;color:#4f5e7a;font-size:10px;">${daysSince(mod.updated)}</div>
     </div>
   `;
 }
 
 function openPipelineModal(id) {
-  const initiative = (DATA.initiatives || []).find(i => i.id === id);
-  if (!initiative) return;
+  const mod = (DATA.modules || []).find(i => i.id === id);
+  if (!mod) return;
 
-  const phaseInfo = PHASE_LABELS[initiative.phase] || { color: '#64748b', label: initiative.phase || '' };
-  const tagPills = (initiative.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-  const cycleCount = initiative.cycle_count;
+  const phaseInfo = PHASE_LABELS[mod.phase] || { color: '#64748b', label: mod.phase || '' };
+  const tagPills = (mod.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const cycleCount = mod.cycle_count;
   const cycleInfo = (cycleCount !== undefined && cycleCount !== null)
     ? `<div class="artifact-row"><span style="color:#334155;">cycles</span><span style="margin-left:auto;color:#4f5e7a;">${cycleCount}</span></div>`
     : '';
-  const resultInfo = initiative.results_summary
-    ? `<div class="artifact-row"><span style="color:#334155;">results</span><span style="margin-left:auto;color:#4f5e7a;font-size:10px;max-width:200px;text-align:right;">${esc(initiative.results_summary)}</span></div>`
+  const resultInfo = mod.results_summary
+    ? `<div class="artifact-row"><span style="color:#334155;">results</span><span style="margin-left:auto;color:#4f5e7a;font-size:10px;max-width:200px;text-align:right;">${esc(mod.results_summary)}</span></div>`
     : '';
-  const reviewInfo = initiative.review_decision
-    ? `<div class="artifact-row"><span style="color:#334155;">review</span><span style="margin-left:auto;color:${initiative.review_decision === 'approved' ? '#34d399' : '#f87171'};font-size:11px;">${esc(initiative.review_decision)}</span></div>`
+  const reviewInfo = mod.review_decision
+    ? `<div class="artifact-row"><span style="color:#334155;">review</span><span style="margin-left:auto;color:${mod.review_decision === 'approved' ? '#34d399' : '#f87171'};font-size:11px;">${esc(mod.review_decision)}</span></div>`
     : '';
 
-  const updDate = initiative.updated || initiative.last_updated || '';
+  const updDate = mod.updated || mod.last_updated || '';
 
   document.getElementById('modal-content').innerHTML = `
     <div class="flex items-start justify-between gap-3 mb-4">
       <div>
-        <div style="color:#e2e8f0;font-size:15px;font-weight:600;margin-bottom:4px;">${esc(initiative.id)}</div>
+        <div style="color:#e2e8f0;font-size:15px;font-weight:600;margin-bottom:4px;">${esc(mod.id)}</div>
         <div class="flex items-center gap-2">
-          <span class="project-badge ${projectClass(initiative.project)}">${esc(projectLabel(initiative.project))}</span>
+          <span class="mission-badge ${missionClass(mod.mission)}">${esc(missionLabel(mod.mission))}</span>
           <span style="width:8px;height:8px;border-radius:50%;background:${phaseInfo.color};display:inline-block;"></span>
           <span style="color:${phaseInfo.color};font-size:11px;">${esc(phaseInfo.label)}</span>
         </div>
       </div>
     </div>
     ${tagPills ? `<div class="flex flex-wrap gap-1 mb-4">${tagPills}</div>` : ''}
-    ${initiative.problem ? `
+    ${mod.problem ? `
       <div style="border-top:1px solid #1a1d2e;padding-top:12px;margin-bottom:14px;">
         <div style="color:#334155;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">problem</div>
-        <p style="color:#64748b;font-size:12px;line-height:1.6;">${esc(initiative.problem)}</p>
+        <p style="color:#64748b;font-size:12px;line-height:1.6;">${esc(mod.problem)}</p>
       </div>
     ` : ''}
     <div style="border-top:1px solid #1a1d2e;padding-top:14px;margin-bottom:14px;">
       <div style="color:#334155;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">artifacts</div>
-      ${artifactRows(initiative.artifacts)}
+      ${artifactRows(mod.artifacts)}
       ${cycleInfo}
       ${resultInfo}
       ${reviewInfo}
@@ -870,26 +870,26 @@ function lifecycleBadge(lc) {
   return `<span class="badge ${cls}">${esc(lc || 'draft')}</span>`;
 }
 
-function inferLifecycle(initiative) {
-  const a = initiative.artifacts || {};
+function inferLifecycle(mod) {
+  const a = mod.artifacts || {};
   if (a.plan) return 'plan';
   if (a.prd) return 'prd';
-  if (initiative.status === 'archived') return 'archived';
+  if (mod.status === 'archived') return 'archived';
   return 'draft';
 }
 
 function renderBowl() {
-  const initiatives = DATA.initiatives || [];
-  const projectGroups = {};
+  const modules = DATA.modules || [];
+  const missionGroups = {};
 
-  initiatives.forEach(item => {
-    const key = item.project || 'unknown';
-    if (!projectGroups[key]) projectGroups[key] = [];
-    projectGroups[key].push(item);
+  modules.forEach(item => {
+    const key = item.mission || 'unknown';
+    if (!missionGroups[key]) missionGroups[key] = [];
+    missionGroups[key].push(item);
   });
 
-  for (const key in projectGroups) {
-    projectGroups[key].sort((a, b) => {
+  for (const key in missionGroups) {
+    missionGroups[key].sort((a, b) => {
       const la = inferLifecycle(a);
       const lb = inferLifecycle(b);
       return lifecycleOrder(la) - lifecycleOrder(lb);
@@ -897,21 +897,21 @@ function renderBowl() {
   }
 
   const list = document.getElementById('bowl-list');
-  if (initiatives.length === 0) {
-    list.innerHTML = `<div class="text-slate-700 text-sm">No initiatives found.</div>`;
+  if (modules.length === 0) {
+    list.innerHTML = `<div class="text-slate-700 text-sm">No modules found.</div>`;
     return;
   }
 
   let html = '';
-  const sortedKeys = Object.keys(projectGroups).sort();
+  const sortedKeys = Object.keys(missionGroups).sort();
 
   sortedKeys.forEach(projectKey => {
-    const items = projectGroups[projectKey];
+    const items = missionGroups[projectKey];
     html += `
       <div class="mb-2">
         <div class="flex items-baseline gap-2 mb-3 pb-2 border-b border-[#1e2235]">
-          <span class="project-badge ${projectClass(projectKey)}">${esc(projectLabel(projectKey))}</span>
-          <span class="text-xs text-slate-600">${items.length} initiative${items.length !== 1 ? 's' : ''}</span>
+          <span class="mission-badge ${missionClass(projectKey)}">${esc(missionLabel(projectKey))}</span>
+          <span class="text-xs text-slate-600">${items.length} module${items.length !== 1 ? 's' : ''}</span>
         </div>
         <div class="space-y-1.5">
     `;
@@ -919,7 +919,7 @@ function renderBowl() {
     items.forEach(item => {
       const lc = inferLifecycle(item);
       const problem = (item.problem || '').slice(0, 90) + ((item.problem || '').length > 90 ? '…' : '');
-      const slug = `${item.project}/${item.id}`;
+      const slug = `${item.mission}/${item.id}`;
 
       html += `
         <div class="flex items-center gap-3 px-3 py-2 rounded" style="background:#0a0d16;border:1px solid #1e2235;">
@@ -970,7 +970,7 @@ function renderPlanTab() {
     // Build options if not yet built
     if (selector.options.length !== plans.length) {
       selector.innerHTML = plans.map((p, idx) =>
-        `<option value="${idx}">${esc(p.project)} / ${esc(p.feature || p.name || 'plan')}</option>`
+        `<option value="${idx}">${esc(p.mission)} / ${esc(p.feature || p.name || 'plan')}</option>`
       ).join('');
     }
     currentPlanIndex = parseInt(selector.value) || 0;
@@ -1159,33 +1159,33 @@ function togglePlanAcceptance(id, btn) {
 // TAB: SCHEMA
 // ════════════════════════════════════════════════════════════════════════
 
-let currentSchemaProject = null;
+let currentSchemaMission = null;
 
 function renderSchemaTab() {
-  const projects = DATA.projects || [];
-  const initiatives = DATA.initiatives || [];
+  const missions = DATA.missions || [];
+  const modules = DATA.modules || [];
 
   // Build sidebar
-  const sidebar = document.getElementById('schema-project-list');
-  sidebar.innerHTML = projects.map(p => {
-    const pInits = initiatives.filter(i => i.project === p.id);
+  const sidebar = document.getElementById('schema-mission-list');
+  sidebar.innerHTML = missions.map(p => {
+    const pInits = modules.filter(i => i.mission === p.id);
     const health = pInits.length > 0 ? 'green' : 'yellow';
     const dotCls = health === 'green' ? 'status-green' : 'status-yellow';
     const alias = p.alias || p.id;
-    const milestoneLabel = p.milestone_label || p.milestone || '';
+    const stageLabel = p.stage_label || p.stage || '';
     const progressStr = p.progress || '';
     const prog = parseProgress(progressStr);
 
     return `
-      <button onclick="selectSchemaProject('${esc(p.id)}')"
+      <button onclick="selectSchemaMission('${esc(p.id)}')"
         class="table-row w-full text-left px-2 py-2 rounded"
-        id="schema-proj-btn-${esc(p.id)}">
+        id="schema-mission-btn-${esc(p.id)}">
         <div class="flex items-center gap-2">
           <span class="status-dot ${dotCls}"></span>
           <span class="flex-1 text-xs text-slate-300">${esc(alias)}</span>
           <span class="text-[10px] px-1.5 rounded" style="background:#1e2235;color:#64748b;">${pInits.length}</span>
         </div>
-        ${milestoneLabel ? `<div style="font-size:9px;color:#475569;padding-left:15px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(milestoneLabel)}</div>` : ''}
+        ${stageLabel ? `<div style="font-size:9px;color:#475569;padding-left:15px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(stageLabel)}</div>` : ''}
         ${prog ? `
           <div style="padding-left:15px;margin-top:3px;">
             <div class="progress-track" style="height:3px;">
@@ -1197,43 +1197,43 @@ function renderSchemaTab() {
     `;
   }).join('');
 
-  // Auto-select first project
-  if (projects.length > 0 && !currentSchemaProject) {
-    selectSchemaProject(projects[0].id);
+  // Auto-select first mission
+  if (missions.length > 0 && !currentSchemaMission) {
+    selectSchemaMission(missions[0].id);
   }
 }
 
-function selectSchemaProject(projectId) {
-  currentSchemaProject = projectId;
+function selectSchemaMission(projectId) {
+  currentSchemaMission = projectId;
 
-  document.querySelectorAll('[id^="schema-proj-btn-"]').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById(`schema-proj-btn-${projectId}`);
+  document.querySelectorAll('[id^="schema-mission-btn-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`schema-mission-btn-${projectId}`);
   if (btn) btn.classList.add('active');
 
   document.getElementById('schema-detail-panel').classList.add('hidden');
 
-  const initiatives = (DATA.initiatives || []).filter(i => i.project === projectId);
+  const modules = (DATA.modules || []).filter(i => i.mission === projectId);
   const main = document.getElementById('schema-main');
 
-  if (initiatives.length === 0) {
-    main.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-700 text-sm">No initiatives for this project.</div>`;
+  if (modules.length === 0) {
+    main.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-700 text-sm">No modules for this mission.</div>`;
     return;
   }
 
   const columns = ['id', 'status', 'phase', 'tags', 'created', 'updated'];
 
-  // Get project details for header
-  const projData = (DATA.projects || []).find(p => p.id === projectId);
-  const projMilestone = projData ? (projData.milestone_label || projData.milestone || '') : '';
+  // Get mission details for header
+  const projData = (DATA.missions || []).find(p => p.id === projectId);
+  const projStage = projData ? (projData.stage_label || projData.stage || '') : '';
   const projProgress = projData ? (projData.progress || '') : '';
   const progParsed = parseProgress(projProgress);
 
   main.innerHTML = `
     <div class="flex-1 overflow-y-auto p-5">
       <div class="flex items-center gap-3 mb-1">
-        <span class="project-badge ${projectClass(projectId)}">${esc(projectLabel(projectId))}</span>
-        <span class="text-slate-500 text-xs">${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''}</span>
-        ${projMilestone ? `<span style="font-size:10px;color:#475569;">· ${esc(projMilestone)}</span>` : ''}
+        <span class="mission-badge ${missionClass(projectId)}">${esc(missionLabel(projectId))}</span>
+        <span class="text-slate-500 text-xs">${modules.length} module${modules.length !== 1 ? 's' : ''}</span>
+        ${projStage ? `<span style="font-size:10px;color:#475569;">· ${esc(projStage)}</span>` : ''}
         ${progParsed ? `<span style="font-size:10px;color:#64748b;margin-left:auto;">${progParsed.pct}% complete</span>` : ''}
       </div>
       ${progParsed ? `
@@ -1249,37 +1249,37 @@ function selectSchemaProject(projectId) {
             </tr>
           </thead>
           <tbody>
-            ${initiatives.map((ini, idx) => renderSchemaRow(ini, idx)).join('')}
+            ${modules.map((ini, idx) => renderSchemaRow(ini, idx)).join('')}
           </tbody>
         </table>
       </div>
-      <div class="text-[10px] text-slate-700 mt-2 px-1">${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''} — click a row for details</div>
+      <div class="text-[10px] text-slate-700 mt-2 px-1">${modules.length} module${modules.length !== 1 ? 's' : ''} — click a row for details</div>
     </div>
   `;
 }
 
-function renderSchemaRow(initiative, idx) {
-  const tags = (initiative.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+function renderSchemaRow(mod, idx) {
+  const tags = (mod.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
   return `
     <tr class="record-row border-b border-[#0f1117]" onclick="selectSchemaRecord(${idx})">
-      <td class="px-3 py-2 font-mono text-indigo-300 whitespace-nowrap">${esc(initiative.id)}</td>
-      <td class="px-3 py-2">${statusBadge(initiative.status)}</td>
+      <td class="px-3 py-2 font-mono text-indigo-300 whitespace-nowrap">${esc(mod.id)}</td>
+      <td class="px-3 py-2">${statusBadge(mod.status)}</td>
       <td class="px-3 py-2">
         <span class="flex items-center gap-1.5">
-          ${phaseDot(initiative.phase)}
-          <span style="color:${(PHASE_LABELS[initiative.phase] || {}).color || '#64748b'};font-size:11px;">${esc(initiative.phase || '')}</span>
+          ${phaseDot(mod.phase)}
+          <span style="color:${(PHASE_LABELS[mod.phase] || {}).color || '#64748b'};font-size:11px;">${esc(mod.phase || '')}</span>
         </span>
       </td>
       <td class="px-3 py-2">${tags || '<span class="text-slate-700">—</span>'}</td>
-      <td class="px-3 py-2 text-slate-600 text-[11px]">${esc(initiative.created || '')}</td>
-      <td class="px-3 py-2 text-slate-600 text-[11px]">${esc(initiative.updated || '')}</td>
+      <td class="px-3 py-2 text-slate-600 text-[11px]">${esc(mod.created || '')}</td>
+      <td class="px-3 py-2 text-slate-600 text-[11px]">${esc(mod.updated || '')}</td>
     </tr>
   `;
 }
 
 function selectSchemaRecord(idx) {
-  const initiatives = (DATA.initiatives || []).filter(i => i.project === currentSchemaProject);
-  const record = initiatives[idx];
+  const modules = (DATA.modules || []).filter(i => i.mission === currentSchemaMission);
+  const record = modules[idx];
   if (!record) return;
 
   document.querySelectorAll('.record-row').forEach(r => r.classList.remove('selected'));
@@ -1296,7 +1296,7 @@ function selectSchemaRecord(idx) {
   content.innerHTML = `
     <div class="flex items-start justify-between mb-4">
       <div>
-        <div class="text-[10px] text-slate-600 mb-1 uppercase tracking-wider">Initiative · ${esc(projectLabel(record.project))}</div>
+        <div class="text-[10px] text-slate-600 mb-1 uppercase tracking-wider">Module · ${esc(missionLabel(record.mission))}</div>
         <div class="text-sm text-indigo-300 font-mono font-medium break-all">${esc(record.id)}</div>
       </div>
       <button onclick="closeSchemaDetail()" class="text-slate-600 hover:text-slate-400 text-sm ml-2 flex-shrink-0">✕</button>

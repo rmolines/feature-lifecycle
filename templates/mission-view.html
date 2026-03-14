@@ -82,7 +82,7 @@
   }
 
   /* ── Milestone colors ────────────────────────────────────────── */
-  .milestone-card { border-left-width: 3px; border-left-style: solid; }
+  .stage-card { border-left-width: 3px; border-left-style: solid; }
   .ms-color-0 { border-left-color: #818cf8; }
   .ms-color-1 { border-left-color: #60a5fa; }
   .ms-color-2 { border-left-color: #22d3ee; }
@@ -92,12 +92,12 @@
 </head>
 <body class="min-h-screen bg-[#0f1117] text-slate-300">
 
-<!-- Data injected by vision-view.sh -->
-<script id="vision-data-raw" type="application/json">__VISION_DATA__</script>
+<!-- Data injected by mission-view.sh -->
+<script id="mission-data-raw" type="application/json">__MISSION_DATA__</script>
 
 <script>
 // ─── Data ────────────────────────────────────────────────────────────────────
-const V = JSON.parse(document.getElementById('vision-data-raw').textContent);
+const V = JSON.parse(document.getElementById('mission-data-raw').textContent);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function esc(str) {
@@ -109,7 +109,7 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-function milestoneColor(idx) {
+function stageColor(idx) {
   const colors = ['#818cf8', '#60a5fa', '#22d3ee', '#fbbf24', '#4ade80'];
   return colors[idx % colors.length];
 }
@@ -157,18 +157,18 @@ function toggleCollapsible(id, btn) {
 // ─── Render header ────────────────────────────────────────────────────────────
 function renderHeader() {
   // Title
-  document.getElementById('vision-id').textContent = V.id || 'vision';
+  document.getElementById('mission-id').textContent = V.id || 'mission';
 
   // Status badge
-  const badgeEl = document.getElementById('vision-status');
+  const badgeEl = document.getElementById('mission-status');
   badgeEl.className = `badge ${statusBadgeClass(V.status)}`;
   badgeEl.textContent = V.status || 'draft';
 
   // Created date
-  document.getElementById('vision-created').textContent = V.created || '';
+  document.getElementById('mission-created').textContent = V.created || '';
 
   // Tags
-  const tagsEl = document.getElementById('vision-tags');
+  const tagsEl = document.getElementById('mission-tags');
   const tags = V.tags || [];
   tagsEl.innerHTML = tags.map(t => `<span class="tag">${esc(t)}</span>`).join('');
 }
@@ -185,18 +185,18 @@ function renderAudience() {
   document.getElementById('audience-secondary').textContent = V.audience?.secondary || '—';
 }
 
-// ─── Render milestones ────────────────────────────────────────────────────────
-function renderMilestones() {
-  const container = document.getElementById('milestones-container');
-  const milestones = V.milestones || [];
+// ─── Render stages ────────────────────────────────────────────────────────
+function renderStages() {
+  const container = document.getElementById('stages-container');
+  const stages = V.stages || [];
 
-  if (milestones.length === 0) {
-    container.innerHTML = '<p class="text-slate-600 text-xs">No milestones defined.</p>';
+  if (stages.length === 0) {
+    container.innerHTML = '<p class="text-slate-600 text-xs">No stages defined.</p>';
     return;
   }
 
-  container.innerHTML = milestones.map((ms, idx) => {
-    const color = milestoneColor(idx);
+  container.innerHTML = stages.map((ms, idx) => {
+    const color = stageColor(idx);
     const colorClass = `ms-color-${idx}`;
 
     // Depends on badges
@@ -253,7 +253,7 @@ function renderMilestones() {
     }
 
     return `
-      <div class="panel milestone-card ${colorClass} p-4">
+      <div class="panel stage-card ${colorClass} p-4">
         <div class="flex items-start gap-3">
           <span class="font-bold text-sm shrink-0" style="color:${color}">${esc(ms.id)}</span>
           <div class="flex-1 min-w-0">
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHeader();
   renderThesis();
   renderAudience();
-  renderMilestones();
+  renderStages();
   renderStrategy();
   renderRisksValidated();
   renderRisksAccepted();
@@ -400,15 +400,15 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="max-w-[900px] mx-auto px-6 py-3">
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-2">
-        <span class="text-indigo-400 font-semibold text-sm">vision://</span>
-        <span id="vision-id" class="text-slate-200 text-sm font-medium"></span>
+        <span class="text-indigo-400 font-semibold text-sm">mission://</span>
+        <span id="mission-id" class="text-slate-200 text-sm font-medium"></span>
       </div>
       <div class="flex items-center gap-3">
-        <span id="vision-status" class="badge badge-draft"></span>
-        <span id="vision-created" class="text-xs text-slate-500"></span>
+        <span id="mission-status" class="badge badge-draft"></span>
+        <span id="mission-created" class="text-xs text-slate-500"></span>
       </div>
     </div>
-    <div class="mt-1.5" id="vision-tags"></div>
+    <div class="mt-1.5" id="mission-tags"></div>
   </div>
 </header>
 
@@ -447,8 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   <!-- Milestones section -->
   <div>
-    <div class="section-label mb-3">Milestones</div>
-    <div id="milestones-container" class="space-y-3"></div>
+    <div class="section-label mb-3">Stages</div>
+    <div id="stages-container" class="space-y-3"></div>
   </div>
 
   <!-- Strategy panel -->

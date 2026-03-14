@@ -5,7 +5,7 @@ import { parseDocument, serializeDocument, getInitiativesRoot } from "../parser.
 import { existsSync, readdirSync, statSync, writeFileSync } from "fs";
 import { join } from "path";
 
-export type InitiativeStatus =
+export type ModuleStatus =
   | "seed"
   | "exploring"
   | "ready"
@@ -16,18 +16,18 @@ export type InitiativeStatus =
   | "shipped";
 
 export async function deriveStatus(
-  project: string,
-  slug: string
-): Promise<{ status: InitiativeStatus; artifacts: string[] }> {
+  mission: string,
+  module: string
+): Promise<{ status: ModuleStatus; artifacts: string[] }> {
   const root = getInitiativesRoot();
 
   // Check archived first
-  const archivedPath = join(root, project, "archived", slug);
+  const archivedPath = join(root, mission, "archived", module);
   if (existsSync(archivedPath) && statSync(archivedPath).isDirectory()) {
-    return { status: "shipped", artifacts: ["archived/" + slug] };
+    return { status: "shipped", artifacts: ["archived/" + module] };
   }
 
-  const dir = join(root, project, slug);
+  const dir = join(root, mission, module);
   if (!existsSync(dir)) {
     return { status: "seed", artifacts: [] };
   }
@@ -110,14 +110,14 @@ export async function deriveStatus(
  * Only updates if draft.md exists and status actually changed.
  */
 export async function updateStatusCache(
-  project: string,
-  slug: string
+  mission: string,
+  module: string
 ): Promise<void> {
   const root = getInitiativesRoot();
-  const draftPath = join(root, project, slug, "draft.md");
+  const draftPath = join(root, mission, module, "draft.md");
   if (!existsSync(draftPath)) return;
 
-  const { status } = await deriveStatus(project, slug);
+  const { status } = await deriveStatus(mission, module);
 
   try {
     const doc = await parseDocument(draftPath);
@@ -135,15 +135,15 @@ export function register(server: McpServer): void {
     "init_get_status",
     "Derives the current lifecycle status of an initiative by inspecting filesystem artifacts",
     {
-      project: z.string().describe("Project name (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
     },
-    async ({ project, slug }) => {
-      const { status, artifacts } = await deriveStatus(project, slug);
+    async ({ mission, module }) => {
+      const { status, artifacts } = await deriveStatus(mission, module);
 
       const result = {
-        project,
-        slug,
+        mission,
+        module,
         status,
         artifacts,
       };

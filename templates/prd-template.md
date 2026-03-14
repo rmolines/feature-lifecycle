@@ -1,6 +1,6 @@
 ---
 id: <slug>
-project: <project-alias>
+mission: <mission-alias>
 created: <date>
 updated: <date>
 tags: []

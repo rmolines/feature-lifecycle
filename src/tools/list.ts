@@ -12,8 +12,8 @@ import { join } from "path";
 
 interface DocumentEntry {
   path: string;
-  project: string;
-  initiative: string;
+  mission: string;
+  module: string;
   type: string;
   data: Record<string, unknown>;
   valid: boolean;
@@ -22,19 +22,19 @@ interface DocumentEntry {
 
 async function collectDocuments(opts: {
   type?: string;
-  project?: string;
+  mission?: string;
 }): Promise<DocumentEntry[]> {
   const root = getInitiativesRoot();
-  const projects = opts.project ? [opts.project] : listProjects();
+  const missions = opts.mission ? [opts.mission] : listProjects();
   const targetTypes = opts.type ? [opts.type] : DOCUMENT_TYPES;
 
   const entries: DocumentEntry[] = [];
 
-  for (const project of projects) {
-    const initiatives = listInitiatives(project);
+  for (const mission of missions) {
+    const modules = listInitiatives(mission);
 
-    for (const initiative of initiatives) {
-      const initDir = join(root, project, initiative);
+    for (const module of modules) {
+      const initDir = join(root, mission, module);
       if (!existsSync(initDir)) continue;
 
       const files = readdirSync(initDir).filter((f) => targetTypes.includes(f));
@@ -59,8 +59,8 @@ async function collectDocuments(opts: {
 
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: parsed.data,
             valid,
@@ -69,8 +69,8 @@ async function collectDocuments(opts: {
         } catch (err) {
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: {},
             valid: false,
@@ -87,7 +87,7 @@ async function collectDocuments(opts: {
 export function register(server: McpServer): void {
   server.tool(
     "init_list",
-    "Lists initiatives documents, optionally filtered by type and/or project",
+    "Lists module documents, optionally filtered by type and/or mission",
     {
       type: z
         .string()
@@ -95,17 +95,17 @@ export function register(server: McpServer): void {
         .describe(
           `Document type filename to filter by (e.g. "draft.md", "prd.md"). Valid types: ${DOCUMENT_TYPES.join(", ")}`
         ),
-      project: z
+      mission: z
         .string()
         .optional()
-        .describe("Project name to filter by (e.g. 'fl', 'akn')"),
+        .describe("Mission name to filter by (e.g. 'fl', 'akn')"),
     },
-    async ({ type, project }) => {
-      const documents = await collectDocuments({ type, project });
+    async ({ type, mission }) => {
+      const documents = await collectDocuments({ type, mission });
 
       const result = {
         count: documents.length,
-        filters: { type: type ?? null, project: project ?? null },
+        filters: { type: type ?? null, mission: mission ?? null },
         documents,
       };
 

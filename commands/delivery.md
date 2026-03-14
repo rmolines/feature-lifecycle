@@ -34,8 +34,8 @@ Try in order:
 
 **If inside a repo (has `.git`):**
 ```bash
-REPO_NAME=$(basename $(git rev-parse --show-toplevel))
-ls ~/.claude/initiatives/$REPO_NAME/*/plan.md 2>/dev/null
+MISSION_NAME=$(basename $(git rev-parse --show-toplevel))
+ls ~/.claude/initiatives/$MISSION_NAME/*/plan.md 2>/dev/null
 ```
 
 **If nothing found:**
@@ -48,10 +48,19 @@ If multiple found: list and ask the user to choose.
 
 ### Read context
 
-1. Read `plan.md` in full — especially the `## Execution DAG` section
-2. Read `prd.md` if it exists (product reference)
-3. Read `.claude/project.md` from the target repo — build/test commands, hot files
-4. If no project config: `Warning: no project.md — using CLAUDE.md`
+Read these **in parallel** (3 simultaneous reads):
+
+1. `plan.md` in full — especially the `## Execution DAG` section
+2. `prd.md` if it exists (product reference)
+3. `.claude/project.md` from the target repo — build/test commands, hot files
+   - If no project config: `Warning: no project.md — using CLAUDE.md`
+
+> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
+
+**Critical:** Read project.md in the same parallel batch as plan.md/prd.md.
+The build/test commands come from project.md — without it, baseline check will fail
+with wrong commands.
 
 ### Parse the Execution DAG
 
@@ -312,10 +321,10 @@ validation_result:
 After writing results.md, generate the visual results view:
 
 ```bash
-bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/initiatives/<repo>/<feature>/plan.md --results ~/.claude/initiatives/<repo>/<feature>/results.md
+bash ~/git/launchpad/scripts/plan-view.sh ~/.claude/initiatives/<mission>/<feature>/plan.md --results ~/.claude/initiatives/<mission>/<feature>/results.md
 ```
 
-Then refresh the cockpit to reflect delivery progress:
+Then refresh Mission Control to reflect delivery progress:
 ```bash
 bash ~/git/launchpad/scripts/cockpit.sh --refresh
 ```

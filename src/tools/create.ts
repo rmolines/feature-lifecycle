@@ -23,12 +23,12 @@ export function register(server: McpServer): void {
         .describe(
           `Document type to create. Valid types: ${DOCUMENT_TYPES.join(", ")}`
         ),
-      project: z.string().describe("Project slug (e.g. 'fl', 'akn')"),
-      slug: z
+      mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      module: z
         .string()
         .optional()
         .describe(
-          "Initiative slug (e.g. 'query-layer'). Not required for vision.md"
+          "Module slug (e.g. 'query-layer'). Not required for mission.md"
         ),
       fields: z
         .record(z.unknown())
@@ -38,7 +38,7 @@ export function register(server: McpServer): void {
         .optional()
         .describe("Optional markdown body content"),
     },
-    async ({ type, project, slug, fields, content }) => {
+    async ({ type, mission, module, fields, content }) => {
       // 1. Validate document type
       if (!DOCUMENT_TYPES.includes(type)) {
         return {
@@ -82,23 +82,23 @@ export function register(server: McpServer): void {
       // 3. Build directory and file path
       const root = getInitiativesRoot();
       let dir: string;
-      if (type === "vision.md") {
-        dir = join(root, project);
+      if (type === "mission.md") {
+        dir = join(root, mission);
       } else {
-        if (!slug) {
+        if (!module) {
           return {
             content: [
               {
                 type: "text" as const,
                 text: JSON.stringify({
                   success: false,
-                  error: `"slug" is required for document type "${type}"`,
+                  error: `"module" is required for document type "${type}"`,
                 }),
               },
             ],
           };
         }
-        dir = join(root, project, slug);
+        dir = join(root, mission, module);
       }
 
       const filePath = join(dir, type);
@@ -129,8 +129,8 @@ export function register(server: McpServer): void {
       writeFileSync(filePath, serialized, "utf-8");
 
       // 7. Update status cache + trigger reindex
-      if (slug) {
-        await updateStatusCache(project, slug);
+      if (module) {
+        await updateStatusCache(mission, module);
       }
       triggerReindex();
 

@@ -46,12 +46,12 @@ export function register(server: McpServer): void {
     "init_finalize",
     "Promotes a draft initiative to 'ready' by creating prd.md with valid frontmatter derived from draft.md",
     {
-      project: z.string().describe("Project name (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
     },
-    async ({ project, slug }) => {
+    async ({ mission, module }) => {
       const root = getInitiativesRoot();
-      const dir = join(root, project, slug);
+      const dir = join(root, mission, module);
       const draftPath = join(dir, "draft.md");
       const prdPath = join(dir, "prd.md");
 
@@ -91,7 +91,7 @@ export function register(server: McpServer): void {
 
       const prdData = {
         id: draftData.id,
-        project: draftData.project,
+        mission: draftData.mission,
         created: draftData.created,
         updated: today(),
         tags: draftData.tags ?? [],
@@ -120,7 +120,7 @@ export function register(server: McpServer): void {
       );
 
       await writeFile(prdPath, prdContent, "utf-8");
-      await updateStatusCache(project, slug);
+      await updateStatusCache(mission, module);
       triggerReindex();
 
       return {
@@ -143,16 +143,16 @@ export function register(server: McpServer): void {
   // ── init_archive ────────────────────────────────────────────────────────────
   server.tool(
     "init_archive",
-    "Archives an initiative by moving it to {project}/archived/{slug}/",
+    "Archives a module by moving it to {mission}/archived/{module}/",
     {
-      project: z.string().describe("Project name (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
     },
-    async ({ project, slug }) => {
+    async ({ mission, module }) => {
       const root = getInitiativesRoot();
-      const srcPath = join(root, project, slug);
-      const archivedDir = join(root, project, "archived");
-      const destPath = join(archivedDir, slug);
+      const srcPath = join(root, mission, module);
+      const archivedDir = join(root, mission, "archived");
+      const destPath = join(archivedDir, module);
 
       if (!existsSync(srcPath) || !statSync(srcPath).isDirectory()) {
         return {
@@ -206,10 +206,10 @@ export function register(server: McpServer): void {
   // ── init_add_cycle ──────────────────────────────────────────────────────────
   server.tool(
     "init_add_cycle",
-    "Adds a new cycle document to an initiative's cycles/ directory",
+    "Adds a new cycle document to a module's cycles/ directory",
     {
-      project: z.string().describe("Project name (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
       type: z
         .enum(["framing", "research", "analysis", "spike", "mockup", "interview"])
         .describe("Cycle type"),
@@ -221,9 +221,9 @@ export function register(server: McpServer): void {
         .optional()
         .describe("Markdown body content for the cycle file"),
     },
-    async ({ project, slug, type, description, content }) => {
+    async ({ mission, module, type, description, content }) => {
       const root = getInitiativesRoot();
-      const dir = join(root, project, slug);
+      const dir = join(root, mission, module);
 
       if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         return {
@@ -231,7 +231,7 @@ export function register(server: McpServer): void {
             {
               type: "text" as const,
               text: JSON.stringify({
-                error: `Initiative directory not found: ${dir}`,
+                error: `Module directory not found: ${dir}`,
               }),
             },
           ],
@@ -256,7 +256,7 @@ export function register(server: McpServer): void {
       const cycleData: Record<string, unknown> = {
         type,
         date: today(),
-        initiative: slug,
+        module: module,
       };
 
       const cycleValidation = CycleSchema.safeParse(cycleData);
@@ -278,7 +278,7 @@ export function register(server: McpServer): void {
 
       const fileContent = serializeDocument(cycleData, content ? `\n${content}\n` : "\n");
       await writeFile(filePath, fileContent, "utf-8");
-      await updateStatusCache(project, slug);
+      await updateStatusCache(mission, module);
       triggerReindex();
 
       return {
@@ -302,17 +302,17 @@ export function register(server: McpServer): void {
     "init_validate",
     "Validates a document's frontmatter against its schema without modifying it",
     {
-      project: z.string().describe("Project name (e.g. 'fl', 'akn')"),
-      slug: z.string().describe("Initiative slug (e.g. 'query-layer')"),
+      mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z
         .string()
         .describe(
           "Filename to validate (e.g. 'draft.md', 'prd.md', 'review.md')"
         ),
     },
-    async ({ project, slug, file }) => {
+    async ({ mission, module, file }) => {
       const root = getInitiativesRoot();
-      const filePath = join(root, project, slug, file);
+      const filePath = join(root, mission, module, file);
 
       if (!existsSync(filePath)) {
         return {

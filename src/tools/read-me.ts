@@ -30,17 +30,17 @@ function buildSchemaSummary(): Record<string, { required: string[]; optional: st
   return summary;
 }
 
-function buildPortfolioStats(): Record<string, { initiatives: number; documents: Record<string, number> }> {
+function buildPortfolioStats(): Record<string, { modules: number; documents: Record<string, number> }> {
   const root = getInitiativesRoot();
-  const projects = listProjects();
-  const stats: Record<string, { initiatives: number; documents: Record<string, number> }> = {};
+  const missions = listProjects();
+  const stats: Record<string, { modules: number; documents: Record<string, number> }> = {};
 
-  for (const project of projects) {
-    const initiatives = listInitiatives(project);
+  for (const mission of missions) {
+    const modules = listInitiatives(mission);
     const docCounts: Record<string, number> = {};
 
-    for (const initiative of initiatives) {
-      const initDir = join(root, project, initiative);
+    for (const module of modules) {
+      const initDir = join(root, mission, module);
       if (!existsSync(initDir)) continue;
 
       const files = readdirSync(initDir).filter((f) => DOCUMENT_TYPES.includes(f));
@@ -49,8 +49,8 @@ function buildPortfolioStats(): Record<string, { initiatives: number; documents:
       }
     }
 
-    stats[project] = {
-      initiatives: initiatives.length,
+    stats[mission] = {
+      modules: modules.length,
       documents: docCounts,
     };
   }
@@ -75,48 +75,48 @@ export function register(server: McpServer): void {
         },
         {
           name: "init_list",
-          description: "Lists initiatives documents with optional filtering",
-          parameters: "type (optional): document type filename; project (optional): project name",
+          description: "Lists module documents with optional filtering",
+          parameters: "type (optional): document type filename; mission (optional): mission name",
         },
         {
           name: "init_create",
-          description: "Creates a new initiative document with Zod-validated frontmatter",
-          parameters: "type, project, slug (optional for vision.md), fields, content (optional)",
+          description: "Creates a new module document with Zod-validated frontmatter",
+          parameters: "type, mission, module (optional for mission.md), fields, content (optional)",
         },
         {
           name: "init_update_fields",
           description: "Merges new frontmatter fields into an existing document, validates against schema",
-          parameters: "project, slug, file, fields",
+          parameters: "mission, module, file, fields",
         },
         {
           name: "init_update_section",
           description: "Replaces the content of a specific ## Heading section",
-          parameters: "project, slug, file, heading, content",
+          parameters: "mission, module, file, heading, content",
         },
         {
           name: "init_get_status",
           description: "Derives lifecycle status from filesystem artifacts",
-          parameters: "project, slug",
+          parameters: "mission, module",
         },
         {
           name: "init_finalize",
           description: "Promotes draft to ready by creating prd.md with valid frontmatter from draft.md",
-          parameters: "project, slug",
+          parameters: "mission, module",
         },
         {
           name: "init_archive",
-          description: "Archives an initiative by moving it to {project}/archived/{slug}/",
-          parameters: "project, slug",
+          description: "Archives a module by moving it to {mission}/archived/{module}/",
+          parameters: "mission, module",
         },
         {
           name: "init_validate",
           description: "Validates a document's frontmatter against its schema without modifying",
-          parameters: "project, slug, file",
+          parameters: "mission, module, file",
         },
         {
           name: "init_add_cycle",
-          description: "Adds a new cycle document to an initiative's cycles/ directory",
-          parameters: "project, slug, type, description, content (optional)",
+          description: "Adds a new cycle document to a module's cycles/ directory",
+          parameters: "mission, module, type, description, content (optional)",
         },
       ];
 

@@ -249,9 +249,9 @@ proj_register() {
 
 # ─── Main scanning loop ───────────────────────────────────────────────────────
 
-INITIATIVES_JSON=""
+MODULES_JSON=""
 PLANS_JSON=""
-first_initiative=1
+first_module=1
 first_plan=1
 
 for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
@@ -339,13 +339,13 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
   updated_esc=$(json_escape "${fm_updated:-}")
   problem_esc=$(json_escape "$problem")
 
-  initiative_obj="{\"id\":\"${id_esc}\",\"project\":\"${proj_esc}\",\"status\":\"${phase_esc}\",\"phase\":\"${phase_esc}\",\"tags\":${tags_json},\"created\":\"${created_esc}\",\"updated\":\"${updated_esc}\",\"artifacts\":{\"draft\":${has_draft},\"cycles\":${has_cycles},\"prd\":${has_prd},\"plan\":${has_plan},\"results\":${has_results},\"review\":${has_review}},\"cycle_count\":${cycle_count},\"results_summary\":${results_summary},\"review_decision\":${review_decision},\"problem\":\"${problem_esc}\"}"
+  module_obj="{\"id\":\"${id_esc}\",\"mission\":\"${proj_esc}\",\"status\":\"${phase_esc}\",\"phase\":\"${phase_esc}\",\"tags\":${tags_json},\"created\":\"${created_esc}\",\"updated\":\"${updated_esc}\",\"artifacts\":{\"draft\":${has_draft},\"cycles\":${has_cycles},\"prd\":${has_prd},\"plan\":${has_plan},\"results\":${has_results},\"review\":${has_review}},\"cycle_count\":${cycle_count},\"results_summary\":${results_summary},\"review_decision\":${review_decision},\"problem\":\"${problem_esc}\"}"
 
-  if [[ $first_initiative -eq 0 ]]; then
-    INITIATIVES_JSON+=","
+  if [[ $first_module -eq 0 ]]; then
+    MODULES_JSON+=","
   fi
-  INITIATIVES_JSON+="$initiative_obj"
-  first_initiative=0
+  MODULES_JSON+="$module_obj"
+  first_module=0
 
   # Parse plan if it exists
   if [[ -f "$feature_dir/plan.md" ]]; then
@@ -365,7 +365,7 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
     plan_name_esc=$(json_escape "$plan_name")
     plan_date_esc=$(json_escape "$plan_date")
 
-    plan_obj="{\"project\":\"${proj_esc}\",\"feature\":\"${id_esc}\",\"name\":\"${plan_name_esc}\",\"date\":\"${plan_date_esc}\",\"tasks\":${tasks_json},\"results\":${results_arr_json}}"
+    plan_obj="{\"mission\":\"${proj_esc}\",\"feature\":\"${id_esc}\",\"name\":\"${plan_name_esc}\",\"date\":\"${plan_date_esc}\",\"tasks\":${tasks_json},\"results\":${results_arr_json}}"
 
     if [[ $first_plan -eq 0 ]]; then
       PLANS_JSON+=","
@@ -491,7 +491,7 @@ while IFS=$'\t' read -r _ra _rn _rd _rm _rml _rp _rnf _rop; do
   fi
 done < "$REPO_SCAN_FILE"
 
-PROJECTS_JSON=""
+MISSIONS_JSON=""
 first_project=1
 
 while IFS= read -r proj; do
@@ -560,12 +560,12 @@ while IFS= read -r proj; do
     fi
     [[ "$r_operational" == "true" ]] && operational_json="true" || operational_json="false"
 
-    project_obj="{\"id\":\"${proj_esc}\",\"alias\":${alias_json},\"description\":${desc_json},\"milestone\":${milestone_json},\"milestone_label\":${milestone_label_json},\"progress\":${progress_json},\"next_feature\":${next_feature_json},\"operational\":${operational_json},\"initiative_counts\":{\"draft\":${draft_c},\"final\":${final_c},\"archived\":${archived_c}},\"total\":${total_c}}"
+    project_obj="{\"id\":\"${proj_esc}\",\"alias\":${alias_json},\"description\":${desc_json},\"stage\":${milestone_json},\"stage_label\":${milestone_label_json},\"progress\":${progress_json},\"next_feature\":${next_feature_json},\"operational\":${operational_json},\"module_counts\":{\"draft\":${draft_c},\"final\":${final_c},\"archived\":${archived_c}},\"total\":${total_c}}"
 
     if [[ $first_project -eq 0 ]]; then
-      PROJECTS_JSON+=","
+      MISSIONS_JSON+=","
     fi
-    PROJECTS_JSON+="$project_obj"
+    MISSIONS_JSON+="$project_obj"
     first_project=0
 done < "$ALL_PROJECTS_FILE"
 
@@ -639,7 +639,7 @@ else
   FILTER_VAL="null"
 fi
 
-FINAL_JSON="{\"generated_at\":\"${GENERATED_AT}\",\"filter_project\":${FILTER_VAL},\"projects\":[${PROJECTS_JSON}],\"initiatives\":[${INITIATIVES_JSON}],\"plans\":[${PLANS_JSON}],\"needs_attention\":${NEEDS_ATTENTION_JSON},\"limbo\":${LIMBO_JSON}}"
+FINAL_JSON="{\"generated_at\":\"${GENERATED_AT}\",\"filter_mission\":${FILTER_VAL},\"missions\":[${MISSIONS_JSON}],\"modules\":[${MODULES_JSON}],\"plans\":[${PLANS_JSON}],\"needs_attention\":${NEEDS_ATTENTION_JSON},\"limbo\":${LIMBO_JSON}}"
 
 # ─── generate_cockpit_md() ─────────────────────────────────────────────────────
 
@@ -656,34 +656,34 @@ with open(json_path, 'r') as f:
     data = json.load(f)
 
 generated_at = data.get('generated_at', '')
-projects = data.get('projects', [])
-initiatives = data.get('initiatives', [])
+missions = data.get('missions', [])
+modules = data.get('modules', [])
 needs_attention = data.get('needs_attention', [])
 limbo = data.get('limbo', [])
 
-# Build initiatives index by project
-initiatives_by_project = {}
-for init in initiatives:
-    proj = init.get('project', '')
-    if proj not in initiatives_by_project:
-        initiatives_by_project[proj] = []
-    initiatives_by_project[proj].append(init)
+# Build modules index by mission
+modules_by_mission = {}
+for mod in modules:
+    proj = mod.get('mission', '')
+    if proj not in modules_by_mission:
+        modules_by_mission[proj] = []
+    modules_by_mission[proj].append(mod)
 
-# Separate milestone vs operational projects
-milestone_projects = []
-operational_projects = []
+# Separate stage vs operational missions
+stage_missions = []
+operational_missions = []
 
-for p in projects:
+for p in missions:
     proj_id = p.get('id', '')
     # Skip limbo projects from main listing
     if proj_id in limbo:
         continue
-    if p.get('milestone') and not p.get('operational', False):
-        milestone_projects.append(p)
+    if p.get('stage') and not p.get('operational', False):
+        stage_missions.append(p)
     else:
-        operational_projects.append(p)
+        operational_missions.append(p)
 
-# Sort milestone projects by progress (least progress first — more work to do)
+# Sort stage missions by progress (least progress first — more work to do)
 def parse_progress(p):
     prog = p.get('progress') or ''
     m = re.match(r'(\d+)/(\d+)', str(prog))
@@ -692,35 +692,35 @@ def parse_progress(p):
         return done / total if total > 0 else 0.0
     return 0.0
 
-milestone_projects.sort(key=parse_progress)
+stage_missions.sort(key=parse_progress)
 
 # Sort operational alphabetically
-operational_projects.sort(key=lambda p: (p.get('id') or '').lower())
+operational_missions.sort(key=lambda p: (p.get('id') or '').lower())
 
 lines = []
 lines.append('# Mission Control')
 lines.append(f'_Auto-generated: {generated_at}. Run \`cockpit.sh --refresh\` to update._')
 lines.append('')
-lines.append('## Projects')
+lines.append('## Missions')
 lines.append('')
 
-# Milestone projects
-for p in milestone_projects:
+# Stage missions
+for p in stage_missions:
     proj_id = p.get('id', '')
     alias = p.get('alias') or proj_id
-    milestone = p.get('milestone') or ''
-    milestone_label = p.get('milestone_label') or ''
+    stage = p.get('stage') or ''
+    stage_label = p.get('stage_label') or ''
     progress = p.get('progress') or ''
     next_feature = p.get('next_feature') or ''
     desc = p.get('description') or ''
 
     header = f"### {proj_id} ({alias})"
-    if milestone:
-        m_str = f"M{milestone}" if not str(milestone).startswith('M') else str(milestone)
-        if milestone_label:
-            header += f" — {m_str}: {milestone_label}"
+    if stage:
+        s_str = f"S{stage}" if not str(stage).startswith('S') else str(stage)
+        if stage_label:
+            header += f" — {s_str}: {stage_label}"
         else:
-            header += f" — {m_str}"
+            header += f" — {s_str}"
     lines.append(header)
 
     meta_parts = []
@@ -733,24 +733,24 @@ for p in milestone_projects:
     elif desc:
         lines.append(desc)
 
-    # Initiatives for this project
-    proj_initiatives = initiatives_by_project.get(proj_id, [])
-    if proj_initiatives:
-        init_parts = []
-        for init in proj_initiatives:
-            init_id = init.get('id', '')
-            phase = init.get('phase', '')
+    # Modules for this mission
+    proj_modules = modules_by_mission.get(proj_id, [])
+    if proj_modules:
+        mod_parts = []
+        for mod in proj_modules:
+            mod_id = mod.get('id', '')
+            phase = mod.get('phase', '')
             if phase:
-                init_parts.append(f"{init_id} ({phase})")
+                mod_parts.append(f"{mod_id} ({phase})")
             else:
-                init_parts.append(init_id)
+                mod_parts.append(mod_id)
         lines.append('')
-        lines.append(f"**Initiatives:** {', '.join(init_parts)}")
+        lines.append(f"**Modules:** {', '.join(mod_parts)}")
 
     lines.append('')
 
-# Operational projects
-for p in operational_projects:
+# Operational missions
+for p in operational_missions:
     proj_id = p.get('id', '')
     alias = p.get('alias') or proj_id
     desc = p.get('description') or ''
@@ -759,30 +759,30 @@ for p in operational_projects:
     if desc:
         lines.append(desc)
 
-    # Initiatives for this project
-    proj_initiatives = initiatives_by_project.get(proj_id, [])
-    if proj_initiatives:
-        init_parts = []
-        for init in proj_initiatives:
-            init_id = init.get('id', '')
-            phase = init.get('phase', '')
+    # Modules for this mission
+    proj_modules = modules_by_mission.get(proj_id, [])
+    if proj_modules:
+        mod_parts = []
+        for mod in proj_modules:
+            mod_id = mod.get('id', '')
+            phase = mod.get('phase', '')
             if phase:
-                init_parts.append(f"{init_id} ({phase})")
+                mod_parts.append(f"{mod_id} ({phase})")
             else:
-                init_parts.append(init_id)
+                mod_parts.append(mod_id)
         lines.append('')
-        lines.append(f"**Initiatives:** {', '.join(init_parts)}")
+        lines.append(f"**Modules:** {', '.join(mod_parts)}")
 
     lines.append('')
 
 # Needs Attention
 if needs_attention:
     lines.append('## Needs Attention')
-    lines.append('| Project | Action | Type | Context |')
+    lines.append('| Mission | Action | Type | Context |')
     lines.append('|---|---|---|---|')
     for item in needs_attention:
         if isinstance(item, dict):
-            proj = item.get('project', '')
+            proj = item.get('mission', item.get('project', ''))
             action = item.get('action', '')
             itype = item.get('type', '')
             context = item.get('context', '')

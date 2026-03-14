@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# derive-status.sh — Shared helpers for deriving initiative status from filesystem artifacts.
+# derive-status.sh — Shared helpers for deriving module status from filesystem artifacts.
 # Source this file to get: frontmatter_field(), derive_status()
 # No executable code at top level — safe to source from other scripts.
 

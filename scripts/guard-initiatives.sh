@@ -22,9 +22,9 @@ DISCOVERIES_DIR="$HOME/.claude/discoveries"
 # Check if the file path is under initiatives or discoveries
 if [[ "$FILE_PATH" == "$INITIATIVES_DIR"/* ]] || [[ "$FILE_PATH" == "$DISCOVERIES_DIR"/* ]]; then
   if [ "$TOOL" = "Read" ]; then
-    echo "{\"decision\":\"block\",\"reason\":\"Direct reads from initiatives/ are blocked. Use QMD tools instead: qmd.get, qmd.multi_get, qmd.query.\"}"
+    echo "{\"decision\":\"block\",\"reason\":\"Direct reads from modules/ are blocked. Use QMD tools instead: qmd.get, qmd.multi_get, qmd.query.\"}"
   else
-    echo "{\"decision\":\"block\",\"reason\":\"Direct writes to initiatives/ are blocked. Use the Initiatives MCP tools instead: init_create, init_update_fields, init_update_section.\"}"
+    echo "{\"decision\":\"block\",\"reason\":\"Direct writes to modules/ are blocked. Use the Initiatives MCP tools instead: init_create, init_update_fields, init_update_section.\"}"
   fi
 else
   echo '{"decision":"allow"}'

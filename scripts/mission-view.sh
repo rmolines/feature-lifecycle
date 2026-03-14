@@ -1,44 +1,44 @@
 #!/usr/bin/env bash
-# vision-view.sh — Parse a vision.md into JSON and open as rich HTML visualization
-# Usage: bash scripts/vision-view.sh <vision.md>
+# mission-view.sh — Parse a mission.md into JSON and open as rich HTML visualization
+# Usage: bash scripts/mission-view.sh <mission.md>
 
 set -euo pipefail
 
-VISION_FILE="${1:-}"
+MISSION_FILE="${1:-}"
 
-if [[ -z "$VISION_FILE" ]]; then
-  echo "Usage: bash $0 <vision.md>" >&2
+if [[ -z "$MISSION_FILE" ]]; then
+  echo "Usage: bash $0 <mission.md>" >&2
   exit 1
 fi
 
-if [[ ! -f "$VISION_FILE" ]]; then
-  echo "Error: vision file not found: $VISION_FILE" >&2
+if [[ ! -f "$MISSION_FILE" ]]; then
+  echo "Error: mission file not found: $MISSION_FILE" >&2
   exit 1
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TEMPLATE="$SCRIPT_DIR/../templates/vision-view.html"
+TEMPLATE="$SCRIPT_DIR/../templates/mission-view.html"
 
 if [[ ! -f "$TEMPLATE" ]]; then
   echo "Error: template not found: $TEMPLATE" >&2
   exit 1
 fi
 
-# ─── Parse vision.md with Python3 ────────────────────────────────────────────
+# ─── Parse mission.md with Python3 ────────────────────────────────────────────
 
 TIMESTAMP=$(date +%s)
-JSON_TMP="/tmp/vision-view-json-${TIMESTAMP}.json"
-OUTPUT="/tmp/vision-view-${TIMESTAMP}.html"
+JSON_TMP="/tmp/mission-view-json-${TIMESTAMP}.json"
+OUTPUT="/tmp/mission-view-${TIMESTAMP}.html"
 
-python3 - "$VISION_FILE" "$JSON_TMP" <<'PYEOF'
+python3 - "$MISSION_FILE" "$JSON_TMP" <<'PYEOF'
 import sys
 import re
 import json
 
-vision_path = sys.argv[1]
+mission_path = sys.argv[1]
 json_path = sys.argv[2]
 
-with open(vision_path, 'r') as f:
+with open(mission_path, 'r') as f:
     content = f.read()
 
 def strip_inline_md(text):
@@ -102,15 +102,15 @@ audience = {
 }
 
 # ── Milestones ────────────────────────────────────────────────────────────────
-milestones_section = get_section(body, 'Milestones')
-milestone_blocks = re.split(r'^(?=### M\d+:)', milestones_section, flags=re.MULTILINE)
+stages_section = get_section(body, 'Milestones')
+stage_blocks = re.split(r'^(?=### S\d+:)', stages_section, flags=re.MULTILINE)
 
-milestones = []
-for block in milestone_blocks:
+stages = []
+for block in stage_blocks:
     block = block.strip()
     if not block:
         continue
-    header_m = re.match(r'^### (M\d+):\s*(.*)', block)
+    header_m = re.match(r'^### (S\d+):\s*(.*)', block)
     if not header_m:
         continue
     m_id = header_m.group(1)
@@ -151,7 +151,7 @@ for block in milestone_blocks:
             elif re.match(r'-\s*\*\*', line):
                 in_blockers = False
 
-    milestones.append({
+    stages.append({
         'id': m_id,
         'name': m_name,
         'description': description,
@@ -254,7 +254,7 @@ result = {
     'thesis': thesis_text,
     'kill_condition': kill_condition,
     'audience': audience,
-    'milestones': milestones,
+    'stages': stages,
     'strategy': strategy,
     'risks_validated': risks_validated,
     'risks_accepted': risks_accepted,
@@ -281,7 +281,7 @@ with open(template_path, 'r') as f:
 with open(json_path, 'r') as f:
     json_data = f.read()
 
-result = template.replace('__VISION_DATA__', json_data)
+result = template.replace('__MISSION_DATA__', json_data)
 
 with open(output_path, 'w') as f:
     f.write(result)

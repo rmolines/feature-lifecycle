@@ -53,8 +53,12 @@ ls ~/.claude/initiatives/$REPO_NAME/*/prd.md 2>/dev/null
 
 ### Load context (in parallel)
 
-- Read `prd.md` — focus on: Problem, Requirements, Solution, Out-of-scope
-- Read `plan.md` — focus on: deliverable list, acceptance criteria, D naming
+Read these simultaneously:
+- `prd.md` — focus on: Problem, Requirements, Solution, Out-of-scope
+- `plan.md` — focus on: deliverable list, acceptance criteria, D naming
+
+> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - `git diff origin/main...HEAD` — committed changes on the branch
 - `git diff HEAD` — uncommitted changes
 

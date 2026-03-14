@@ -26,7 +26,7 @@ Discovery is a **risk reduction engine**. You're eliminating two kinds of risk:
 - Human knows but can't articulate → propose interpretations, ask "does this capture it?"
 - You misunderstood the intent → validate your understanding before building on it
 
-**Initiative risks** — handled as explicit investigation cycles:
+**Module risks** — handled as explicit investigation cycles:
 - The idea might be bad → kill conditions, competitive research
 - Technical feasibility → spikes, proof of concepts
 - Usability → mockups, prototype testing
@@ -64,57 +64,57 @@ committing code.
 
 ## On entry: detect context and route
 
-### Detect project context
+### Detect mission context
 
 ```bash
-REPO_NAME=""
+MISSION_NAME=""
 if git rev-parse --is-inside-work-tree 2>/dev/null; then
-  REPO_NAME=$(grep "^alias:" .claude/project.md 2>/dev/null | sed 's/^alias: //' | head -1)
-  [ -z "$REPO_NAME" ] && REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
+  MISSION_NAME=$(grep "^alias:" .claude/project.md 2>/dev/null | sed 's/^alias: //' | head -1)
+  [ -z "$MISSION_NAME" ] && MISSION_NAME=$(basename "$(git rev-parse --show-toplevel)")
 fi
 ```
 
-- **Inside a repo** → features live under `~/.claude/initiatives/$REPO_NAME/<feature>/`.
+- **Inside a repo** → features live under `~/.claude/initiatives/$MISSION_NAME/<feature>/`.
   Read `.claude/project.md` and `CLAUDE.md` for project context.
-- **Outside a repo** → new project. Features live under `~/.claude/initiatives/<project>/`.
+- **Outside a repo** → new mission. Features live under `~/.claude/initiatives/<mission>/`.
 
-### Check for vision context
+### Check for mission context
 
 ```bash
-# Resolve project name from argument (e.g. "ciclosp/mvp-mapa" → "ciclosp")
-PROJECT=$(echo "$ARGUMENTS" | cut -d'/' -f1)
-[ -z "$PROJECT" ] && PROJECT=$REPO_NAME
-VISION_PATH="$HOME/.claude/initiatives/$PROJECT/vision.md"
+# Resolve mission name from argument (e.g. "ciclosp/mvp-mapa" → "ciclosp")
+MISSION=$(echo "$ARGUMENTS" | cut -d'/' -f1)
+[ -z "$MISSION" ] && MISSION=$MISSION_NAME
+MISSION_PATH="$HOME/.claude/initiatives/$MISSION/mission.md"
 ```
 
-If `vision.md` exists at the project level, **read it before starting**. The vision
+If `mission.md` exists at the mission level, **read it before starting**. The mission
 provides strategic context that informs this feature's discovery:
 
 - **Thesis** — why this product exists (frames the feature's purpose)
-- **Milestones** — where this feature sits in the sequence (informs scope and dependencies)
+- **Stages** — where this feature sits in the sequence (informs scope and dependencies)
 - **Strategy** — platform, distribution, monetization (informs technical decisions)
-- **Kill conditions** — project-level and milestone-level (may affect this feature)
+- **Kill conditions** — mission-level and stage-level (may affect this feature)
 
 Use this context to calibrate framing depth and push back on scope creep. If the user
-proposes something that contradicts the vision, flag it:
-"The vision says X, but you're proposing Y — should we update the vision or adjust
+proposes something that contradicts the mission, flag it:
+"The mission says X, but you're proposing Y — should we update the mission or adjust
 this feature's scope?"
 
 ### Parse arguments
 
-- Contains `/` → explicit `<project>/<feature>` path
-- Simple slug → feature name (inside detected project) or project name (outside repo)
+- Contains `/` → explicit `<mission>/<feature>` path
+- Simple slug → feature name (inside detected mission) or mission name (outside repo)
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view (see below)
-- Empty → show portfolio view if initiatives exist, then ask what to explore
+- Empty → show portfolio view if modules exist, then ask what to explore
 
 ### Portfolio view
 
-When called with `--status`, or with no arguments and existing initiatives, show the
-state of all features for the current project (or all projects if outside a repo):
+When called with `--status`, or with no arguments and existing modules, show the
+state of all features for the current mission (or all missions if outside a repo):
 
 ```bash
-for dir in ~/.claude/initiatives/$REPO_NAME/*/; do
+for dir in ~/.claude/initiatives/$MISSION_NAME/*/; do
   [ -d "$dir" ] || continue
   feature=$(basename "$dir")
   if [ -f "$dir/review.md" ] && grep -q "^decision: approved" "$dir/review.md"; then status="approved"
@@ -131,7 +131,7 @@ done
 
 Present as a summary:
 ```
-Portfolio: <project>
+Portfolio: <mission>
 
   auth          ready      → next: /launchpad:planning auth
   dashboard     exploring  → 3 cycles done, 2 risks pending
@@ -156,6 +156,9 @@ discovery, start a new one, or finalize one that's ready.
 ### Route
 
 - **`draft.md` exists** → resume. Read draft, list completed cycles, ask which risk to tackle next.
+
+> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - **`review.md` exists with `decision: back-to-discovery`** → amendment mode. Read `review.md`
   and the existing `prd.md`. Present the review findings to the user:
   ```
@@ -238,15 +241,15 @@ Once the problem is clear, evaluate whether it's one feature or multiple:
 > value independently and has different risks. I suggest we create separate discoveries
 > for each. Which one do you want to prioritize?"
 
-Then create initial drafts for each feature under the same project:
+Then create initial drafts for each feature under the same mission:
 ```
-~/.claude/initiatives/<project>/auth/draft.md
-~/.claude/initiatives/<project>/dashboard/draft.md
-~/.claude/initiatives/<project>/billing/draft.md
+~/.claude/initiatives/<mission>/auth/draft.md
+~/.claude/initiatives/<mission>/dashboard/draft.md
+~/.claude/initiatives/<mission>/billing/draft.md
 ```
 
-Each draft gets the shared framing context (problem, project background) but scoped to
-its specific feature. The human then runs `/launchpad:discovery <project>/<feature>` on each one
+Each draft gets the shared framing context (problem, mission background) but scoped to
+its specific feature. The human then runs `/launchpad:discovery <mission>/<feature>` on each one
 independently, in whatever order and priority they choose.
 
 **If it's one feature:** proceed to risk identification normally.
@@ -276,7 +279,7 @@ Create `draft.md` from the PRD template (`templates/prd-template.md`):
   ```yaml
   ---
   id: <feature-slug>
-  project: <REPO_NAME>
+  mission: <MISSION_NAME>
   created: <today YYYY-MM-DD>
   updated: <today YYYY-MM-DD>
   priority: medium
@@ -425,8 +428,8 @@ If all 5 pass:
 - Consolidate language (remove "we think", "it seems", hedging)
 - Ensure each section is self-contained (the `/launchpad:planning` agent reads this with zero context)
 
-If the PRD is for a new project, flag it:
-"This PRD is for a new project. `/launchpad:planning` will include repo setup as the first deliverable."
+If the PRD is for a new mission, flag it:
+"This PRD is for a new mission. `/launchpad:planning` will include repo setup as the first deliverable."
 
 ### Close
 

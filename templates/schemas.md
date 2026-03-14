@@ -313,7 +313,7 @@ DECISION=$(grep "^decision:" review.md | awk '{print $2}')
 
 ## Schema 5: Delivery Results (results.md)
 
-`/delivery` writes this file after all batches complete. It persists the per-deliverable results that would otherwise be lost when the chat session ends. Saved to `~/.claude/initiatives/<repo>/<feature>/results.md`.
+`/delivery` writes this file after all batches complete. It persists the per-deliverable results that would otherwise be lost when the chat session ends. Saved to `~/.claude/initiatives/<mission>/<feature>/results.md`.
 
 ### Format
 
@@ -385,23 +385,23 @@ ERRORS=$(get_result_field D1 errors)
 
 ---
 
-## Schema 6: Vision (vision.md)
+## Schema 6: Mission (mission.md)
 
 `/launchpad:vision` writes this file as the strategic layer above feature-level PRDs.
-It's consumed by the human (via mission control HTML) and by `/discovery` for context.
-Milestone status is **not** stored in vision.md — it's computed from the filesystem.
+It's consumed by the human (via Mission Control HTML) and by `/discovery` for context.
+Stage status is **not** stored in mission.md — it's computed from the filesystem.
 
 ### Format
 
 ```markdown
 ---
-id: <project-slug>
+id: <mission-slug>
 status: draft | validated | active | paused | archived
 created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
 tags: []
 ---
-# Vision: <name>
+# Mission: <name>
 
 ## Thesis
 <One falsifiable sentence: who, what hurts, why now>
@@ -413,15 +413,15 @@ tags: []
 - **Primary:** <who and why>
 - **Secondary:** <who and why>
 
-## Milestones
+## Stages
 
-### M1: <name>
-- **Hypothesis:** <hypothesis this milestone validates>
-- **Entry:** /launchpad:discovery <project>/<milestone-slug>
-- **Depends on:** <nothing or M-previous>
-- **Kill condition:** <what kills this milestone>
+### S1: <name>
+- **Hypothesis:** <hypothesis this stage validates>
+- **Entry:** /launchpad:discovery <mission>/<stage-slug>
+- **Depends on:** <nothing or S-previous>
+- **Kill condition:** <what kills this stage>
 
-### M2: <name>
+### S2: <name>
 ...
 
 ## Strategy
@@ -449,41 +449,41 @@ tags: []
 
 | Field | Rules |
 |---|---|
-| `id` | Project slug. Used in filesystem paths: `~/.claude/initiatives/<id>/` |
-| `status` | `draft` (in progress), `validated` (finalized), `active` (milestones being executed), `paused`, `archived` |
-| Milestone `Entry` | Must be a valid `/launchpad:discovery` command that the human can copy-paste |
-| Milestone `Depends on` | References other milestone IDs (M1, M2...) or empty for no dependencies |
-| Milestone `Blockers` | Checklist of risks/spikes that must be resolved in `/discovery` before the milestone can proceed. These become the first investigation cycles in discovery. |
+| `id` | Mission slug. Used in filesystem paths: `~/.claude/initiatives/<id>/` |
+| `status` | `draft` (in progress), `validated` (finalized), `active` (stages being executed), `paused`, `archived` |
+| Stage `Entry` | Must be a valid `/launchpad:discovery` command that the human can copy-paste |
+| Stage `Depends on` | References other stage IDs (S1, S2...) or empty for no dependencies |
+| Stage `Blockers` | Checklist of risks/spikes that must be resolved in `/discovery` before the stage can proceed. These become the first investigation cycles in discovery. |
 | Kill condition | Must be falsifiable — something that could actually be true |
 
-### Milestone status (computed, not stored)
+### Stage status (computed, not stored)
 
-Milestone status is derived from the filesystem, not from vision.md:
+Stage status is derived from the filesystem, not from mission.md:
 
 ```bash
-PROJECT="ciclosp"
-for ms_dir in ~/.claude/initiatives/$PROJECT/*/; do
-  ms=$(basename "$ms_dir")
-  [ "$ms" = "cycles" ] && continue
-  if [ -d "$ms_dir/archived" ]; then echo "$ms: archived"
-  elif [ -f "$ms_dir/prd.md" ]; then echo "$ms: prd ready"
-  elif [ -f "$ms_dir/draft.md" ]; then echo "$ms: discovery in progress"
-  else echo "$ms: not started"
+MISSION="ciclosp"
+for st_dir in ~/.claude/initiatives/$MISSION/*/; do
+  st=$(basename "$st_dir")
+  [ "$st" = "cycles" ] && continue
+  if [ -d "$st_dir/archived" ]; then echo "$st: archived"
+  elif [ -f "$st_dir/prd.md" ]; then echo "$st: prd ready"
+  elif [ -f "$st_dir/draft.md" ]; then echo "$st: discovery in progress"
+  else echo "$st: not started"
   fi
 done
 ```
 
-### Vision Quality Gate
+### Mission Quality Gate
 
 6 items, all must pass before `status: validated`:
 
 ```
-Vision Quality Gate
--------------------
+Mission Quality Gate
+--------------------
 [ ] 1. Thesis is falsifiable (concrete condition that proves it wrong)
 [ ] 2. Kill condition is honest (not a strawman)
-[ ] 3. Milestones sequenced by risk (highest uncertainty earliest)
-[ ] 4. Each milestone has independent value (can stop after any one)
+[ ] 3. Stages sequenced by risk (highest uncertainty earliest)
+[ ] 4. Each stage has independent value (can stop after any one)
 [ ] 5. Strategy decisions are explicit (no TBDs)
 [ ] 6. Audience is specific enough to design for
 ```
@@ -492,11 +492,11 @@ Vision Quality Gate
 
 ```bash
 # Read thesis
-THESIS=$(awk '/^## Thesis/{found=1; next} found && /^$/{exit} found{print}' vision.md | head -1)
+THESIS=$(awk '/^## Thesis/{found=1; next} found && /^$/{exit} found{print}' mission.md | head -1)
 
 # Read status
-STATUS=$(grep "^status:" vision.md | head -1 | sed 's/^status: //')
+STATUS=$(grep "^status:" mission.md | head -1 | sed 's/^status: //')
 
-# List milestone slugs (from Entry field)
-MILESTONES=$(grep "^\- \*\*Entry:\*\*" vision.md | sed 's/.*discovery [^ ]*//' | awk -F'/' '{print $NF}')
+# List stage slugs (from Entry field)
+STAGES=$(grep "^\- \*\*Entry:\*\*" mission.md | sed 's/.*discovery [^ ]*//' | awk -F'/' '{print $NF}')
 ```
