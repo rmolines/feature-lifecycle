@@ -1,5 +1,13 @@
 # Changelog
 
+## cockpit-v2: MCP server migration to 3-level paths — PR #15 — 2026-03-14
+**Type:** feat
+**PRD:** `~/.claude/initiatives/fl/cockpit-v2/prd.md`
+**Commit:** `git show fda17c2`
+**Decisions:** see LEARNINGS.md#cockpit-v2
+
+Added `stage` parameter to all MCP tools (`init_create`, `init_list`, `init_get_status`, `init_update_fields`, `init_update_section`, `init_add_cycle`, `init_finalize`, `init_archive`, `init_validate`, `init_read_me`). Registered new doc types (`module`, `draft-module`) in SCHEMAS alongside legacy `prd`/`draft`. API layer now recognizes `module.md`/`draft-module.md` in addition to `prd.md`/`draft.md`. Added missing devDependencies.
+
 ## Session Isolation + Cockpit V2 — 2026-03-14
 **Type:** feat
 **PRD:** `~/.claude/initiatives/fl/session-isolation/prd.md`
