@@ -89,9 +89,9 @@ Closest competitors:
 - **Factory AI** — connects Linear/Jira to agents (still ticket-driven)
 - **Google Conductor** — Markdown files in repo (similar artifact model, no process framework)
 
-### Vibe Coding vs. Feature Lifecycle
+### Vibe Coding vs. Launchpad
 
-| Dimension | Vibe Coding | Feature Lifecycle |
+| Dimension | Vibe Coding | Launchpad |
 |---|---|---|
 | Planning | Implicit, emergent | PRD as execution contract |
 | Execution | Continuous prompting loop | Discrete phases with gates |

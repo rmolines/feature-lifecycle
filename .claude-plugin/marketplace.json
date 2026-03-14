@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "launchpad",
-      "description": "Complete feature lifecycle: discovery, planning, delivery, review, and ship. Transforms ideas into validated PRDs, executable plans, working code, and production deployments.",
+      "description": "Complete product lifecycle: discovery, planning, delivery, review, and ship. Transforms ideas into validated PRDs, executable plans, working code, and production deployments.",
       "version": "0.1.0",
       "source": "./",
       "category": "development"
