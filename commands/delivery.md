@@ -423,8 +423,6 @@ Tests: X/Y passed
 Next step: /review <repo>/<feature>
 ```
 
-In amendment mode, skipped deliverables must also be written to results.md with `status: skipped` and `summary: Previously passing`. This ensures results.md is always a complete record of all deliverables regardless of amendment mode.
-
 After successful amendment delivery, **delete review.md** to clear the amendment flag:
 ```bash
 rm ~/.claude/initiatives/$FEATURE_PATH/review.md

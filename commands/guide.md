@@ -42,7 +42,6 @@ discover what the interface actually needs. Spend the most effort here.
 
 ```bash
 REPO_ROOT=""
-REPO_NAME=""
 MISSION_NAME=""
 if git rev-parse --is-inside-work-tree 2>/dev/null; then
   REPO_ROOT=$(git rev-parse --show-toplevel)
