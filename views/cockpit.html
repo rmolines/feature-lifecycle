@@ -7,13 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/views/shared/tokens.css">
 <script src="/views/shared/components.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 <script src="/views/shared/ws-client.js"></script>
 <style>
-  /* ── Layout ──────────────────────────────────────────────────────────── */
   html, body { height: 100%; overflow: hidden; }
   body { display: flex; flex-direction: column; }
 
@@ -24,34 +22,26 @@
     border-bottom: 1px solid var(--color-border);
   }
 
-  /* ── Stat chip ───────────────────────────────────────────────────────── */
   .stat-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--color-text-secondary);
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--font-size-sm); color: var(--color-text-secondary);
   }
   .stat-chip strong { color: var(--color-text-primary); font-weight: 600; }
 
-  /* ── Project tabs ────────────────────────────────────────────────────── */
-  .project-tab-bar {
-    display: flex;
-    align-items: flex-end;
-    padding: 0 20px;
-    border-top: 1px solid var(--color-border);
-    gap: 2px;
-    overflow-x: auto;
-    scrollbar-width: none;
+  .cockpit-tab-bar {
+    display: flex; align-items: flex-end; padding: 0 20px;
+    border-top: 1px solid var(--color-border); gap: 2px;
+    overflow-x: auto; scrollbar-width: none;
   }
-  .project-tab-bar::-webkit-scrollbar { display: none; }
+  .cockpit-tab-bar::-webkit-scrollbar { display: none; }
 
-  /* ── Main content ────────────────────────────────────────────────────── */
-  .cockpit-main {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-  }
+  /* ── Main + tabs ─────────────────────────────────────────────────────── */
+  .cockpit-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  .tab-pane { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+  .tab-pane.active { display: block; }
+  .tab-pane.flex-pane { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .tab-pane.flex-pane.active { display: flex; }
 
   /* ── Initiative grid ─────────────────────────────────────────────────── */
   .initiative-grid {
@@ -60,287 +50,939 @@
     gap: 10px;
   }
 
-  /* ── Initiative card overrides ───────────────────────────────────────── */
+  /* ── Initiative card ─────────────────────────────────────────────────── */
   .initiative-card {
     background: var(--color-panel);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-left-width: 3px;
+    border-left-style: solid;
+  }
+  .initiative-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
+
+  /* ── Mission cards ───────────────────────────────────────────────────── */
+  .mission-cards-row {
+    display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px;
+  }
+  .mission-card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    min-width: 200px;
+    flex: 1;
+    max-width: 320px;
   }
 
-  /* ── Expand toggle ───────────────────────────────────────────────────── */
-  .expand-chevron {
-    transition: transform 0.15s ease;
-    color: var(--color-text-secondary);
+  /* ── Progress bar ────────────────────────────────────────────────────── */
+  .progress-track {
+    height: 3px; background: #1e2235; border-radius: 2px;
+    overflow: hidden; width: 100%; margin-top: 8px;
   }
-  .expand-chevron.open { transform: rotate(180deg); }
+  .progress-fill {
+    height: 100%; background: var(--color-accent); border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .progress-fill.high { background: var(--color-ready); }
+  .progress-fill.complete { background: var(--color-success); }
 
   /* ── Artifact pill ───────────────────────────────────────────────────── */
   .artifact-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 9px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    text-transform: lowercase;
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    font-weight: 500; letter-spacing: 0.03em; text-transform: lowercase;
   }
   .artifact-pill.present {
-    background: rgba(74,222,128,0.1);
-    color: #4ade80;
+    background: rgba(74,222,128,0.1); color: #4ade80;
     border: 1px solid rgba(74,222,128,0.2);
   }
   .artifact-pill.absent {
-    background: rgba(71,85,105,0.1);
-    color: #334155;
+    background: rgba(71,85,105,0.1); color: #334155;
     border: 1px solid rgba(71,85,105,0.15);
   }
 
-  /* ── Empty state ─────────────────────────────────────────────────────── */
-  .empty-state {
-    color: #3a4560;
-    font-size: 11px;
-    text-align: center;
-    padding: 40px 20px;
-    border: 1px dashed #252a3a;
-    border-radius: var(--radius-md);
-  }
+  /* ── Expand chevron ──────────────────────────────────────────────────── */
+  .expand-chevron { transition: transform 0.15s ease; color: var(--color-text-secondary); }
+  .expand-chevron.open { transform: rotate(180deg); }
 
-  /* ── Loading pulse ───────────────────────────────────────────────────── */
-  .skeleton {
-    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: var(--radius-sm);
-  }
-  @keyframes shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  /* ── Status counts bar ───────────────────────────────────────────────── */
+  /* ── Status mini badge ───────────────────────────────────────────────── */
   .status-mini-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 9px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    color: var(--color-text-secondary);
-    background: rgba(30,34,53,0.7);
-    border: 1px solid var(--color-border);
-    cursor: pointer;
-    transition: opacity 0.1s;
+    display: inline-flex; align-items: center; gap: 3px; font-size: 9px;
+    padding: 1px 5px; border-radius: 3px; color: var(--color-text-secondary);
+    background: rgba(30,34,53,0.7); border: 1px solid var(--color-border); cursor: pointer;
   }
   .status-mini-badge:hover { opacity: 0.8; }
 
   /* ── Section label ───────────────────────────────────────────────────── */
   .section-label {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-secondary);
-    margin-bottom: 12px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 12px;
+  }
+
+  /* ── Pipeline (kanban) ───────────────────────────────────────────────── */
+  .pipeline-container { flex: 1; overflow-x: auto; padding: 20px; }
+  .pipeline-board { display: flex; gap: 0; align-items: flex-start; min-width: max-content; }
+  .phase-col { min-width: 190px; flex-shrink: 0; padding: 0 8px; }
+  .phase-col-header {
+    border-bottom: 1px solid #1a1d2e; padding-bottom: 8px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .phase-col-title { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .phase-col-count { font-size: 9px; color: var(--color-text-secondary); }
+  .pipeline-mission-hdr {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #475569; padding: 4px 0 3px 0; margin-top: 8px; margin-bottom: 3px;
+    border-top: 1px solid #1a1d2e; display: flex; align-items: center; gap: 5px;
+  }
+  .pipeline-mission-hdr:first-child { margin-top: 0; border-top: none; }
+  .module-card {
+    background: var(--color-panel); border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 5px;
+    cursor: pointer; transition: all 0.15s ease; border-left-width: 3px; border-left-style: solid;
+    font-size: var(--font-size-sm);
+  }
+  .module-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
+  .empty-col {
+    color: #3a4560; font-size: 11px; text-align: center; padding: 16px 8px;
+    border: 1px dashed #252a3a; border-radius: 4px;
+  }
+
+  /* ── Plan tab ────────────────────────────────────────────────────────── */
+  .plan-selector-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .plan-selector-bar label { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+  .plan-select {
+    background: var(--color-panel); border: 1px solid var(--color-border);
+    color: var(--color-text-primary); font-size: var(--font-size-sm);
+    border-radius: var(--radius-sm); padding: 4px 10px; font-family: var(--font-mono);
+  }
+  .plan-select:focus { outline: none; border-color: var(--color-accent); }
+
+  .plan-card {
+    background: var(--color-panel); border: 1px solid var(--color-border);
+    border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .plan-card.result-success { border-left: 3px solid var(--color-success); }
+  .plan-card.result-partial  { border-left: 3px solid var(--color-warning); }
+  .plan-card.result-failed   { border-left: 3px solid var(--color-danger); }
+  .plan-card.result-skipped  { border-left: 3px solid #475569; }
+
+  .batch-section { margin-bottom: 24px; }
+  .batch-header {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-text-secondary); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .plan-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px;
+  }
+
+  .reqs-panel {
+    background: var(--color-panel); border: 1px solid var(--color-border);
+    border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px;
+  }
+  .req-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 0; border-bottom: 1px solid var(--color-border-dim);
+    font-size: var(--font-size-sm);
+  }
+  .req-row:last-child { border-bottom: none; }
+  .req-id { color: #c084fc; font-weight: 600; min-width: 36px; flex-shrink: 0; }
+  .req-text { color: var(--color-text-primary); flex: 1; }
+
+  .exec-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+  .exec-sonnet { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid #1d4ed8; }
+  .exec-haiku  { background: rgba(34,197,94,0.15);  color: #86efac; border: 1px solid #15803d; }
+  .exec-opus   { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid #5b21b6; }
+  .exec-default { background: rgba(71,85,105,0.15); color: #94a3b8; border: 1px solid #334155; }
+
+  .iso-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+  .iso-worktree { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid #b45309; }
+  .iso-none     { background: rgba(71,85,105,0.15);  color: #94a3b8; border: 1px solid #334155; }
+
+  .res-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+  .res-success { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid #16a34a; }
+  .res-partial  { background: rgba(234,179,8,0.2);  color: #fde047; border: 1px solid #ca8a04; }
+  .res-failed   { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid #dc2626; }
+  .res-skipped  { background: rgba(71,85,105,0.2);  color: #94a3b8; border: 1px solid #475569; }
+
+  .dep-badge { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid #3730a3; }
+  .req-ref-badge { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(139,92,246,0.1); color: #c4b5fd; border: 1px solid #5b21b6; }
+  .file-badge { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(30,34,53,0.8); color: #64748b; border: 1px solid var(--color-border); }
+
+  .acceptance-content { display: none; margin-top: 4px; }
+  .acceptance-content.open { display: block; }
+  .toggle-btn svg { transition: transform 0.2s; }
+  .toggle-btn.open svg { transform: rotate(180deg); }
+
+  /* ── Attention tab ───────────────────────────────────────────────────── */
+  .attention-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+  .attention-table th {
+    text-align: left; color: #475569; font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 4px 8px 6px; border-bottom: 1px solid var(--color-border); font-weight: 500;
+  }
+  .attention-table td { padding: 5px 8px; color: var(--color-text-secondary); border-bottom: 1px solid var(--color-border-dim); }
+  .attention-table tr:last-child td { border-bottom: none; }
+  .attention-table tr:hover td { background: #1a1d2a; }
+
+  .type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; }
+  .type-external { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid #b45309; }
+  .type-internal { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid #3730a3; }
+  .type-default  { background: rgba(71,85,105,0.15);  color: #94a3b8; border: 1px solid #334155; }
+
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .empty-state {
+    color: #3a4560; font-size: var(--font-size-sm); text-align: center;
+    padding: 40px 20px; border: 1px dashed #252a3a; border-radius: var(--radius-md);
   }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     ROOT — Alpine workspace
-════════════════════════════════════════════════════════════════════════════ -->
-<div
-  x-data="cockpitWorkspace()"
-  x-init="init()"
-  class="flex flex-col h-full"
->
+<div x-data="cockpitApp()" x-init="init()" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <header class="cockpit-header">
-    <!-- Top bar: logo + stats -->
-    <div class="flex items-center justify-between px-5 py-2.5">
-      <!-- Logo -->
-      <div class="flex items-center gap-3">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
         <span style="font-size:13px; color:#818cf8; font-weight:600; letter-spacing:-0.02em;">cockpit://</span>
         <span style="font-size:10px; color:#334155;">launchpad</span>
       </div>
-
-      <!-- Stats -->
-      <div class="flex items-center gap-5">
-        <!-- Total -->
-        <div class="stat-chip">
-          <span>initiatives</span>
-          <strong x-text="totalCount"></strong>
+      <div style="display:flex; align-items:center; gap:20px;">
+        <div class="stat-chip"><span>missions</span><strong x-text="missions.length"></strong></div>
+        <div class="stat-chip"><span>modules</span><strong x-text="allModules.length"></strong></div>
+        <div class="stat-chip" x-show="attentionItems.length > 0">
+          <span style="color:#fcd34d;">attention</span>
+          <strong style="color:#fcd34d;" x-text="attentionItems.length"></strong>
         </div>
-
-        <!-- Per-project counts -->
-        <template x-for="project in projects" :key="project">
-          <div class="stat-chip">
-            <span x-text="project"></span>
-            <strong x-text="initiatives.filter(d => d.project === project).length"></strong>
-          </div>
-        </template>
       </div>
     </div>
 
-    <!-- Status counts bar -->
-    <div class="flex items-center gap-2 px-5 pb-2" x-show="!loading && totalCount > 0">
+    <!-- Status summary bar -->
+    <div style="display:flex; align-items:center; gap:6px; padding: 0 20px 8px;" x-show="!loading && allModules.length > 0">
       <template x-for="(count, status) in statusCounts" :key="status">
         <span class="status-mini-badge" :title="status">
-          <span class="status-dot" :class="statusDotClass(status)"></span>
+          <span class="status-dot" :class="'dot-' + status"></span>
           <span x-text="count"></span>
-          <span x-text="status" style="color: #475569;"></span>
+          <span x-text="status" style="color:#475569;"></span>
         </span>
       </template>
     </div>
 
-    <!-- Project tab bar -->
-    <div class="project-tab-bar">
-      <button
-        class="tab-btn"
-        :class="{ active: activeProject === 'all' }"
-        @click="setProject('all')"
-      >all</button>
-      <template x-for="project in projects" :key="project">
-        <button
-          class="tab-btn"
-          :class="{ active: activeProject === project }"
-          @click="setProject(project)"
-          x-text="project"
-        ></button>
-      </template>
+    <!-- Tab bar -->
+    <div class="cockpit-tab-bar">
+      <button class="tab-btn" :class="{active: activeTab==='overview'}"  @click="activeTab='overview'">Overview</button>
+      <button class="tab-btn" :class="{active: activeTab==='pipeline'}"  @click="activeTab='pipeline'">Pipeline</button>
+      <button class="tab-btn" :class="{active: activeTab==='plan'}"      @click="activeTab='plan'">Plan</button>
+      <button class="tab-btn" :class="{active: activeTab==='attention'}" @click="activeTab='attention'">
+        Attention
+        <template x-if="attentionItems.length > 0">
+          <span style="margin-left:4px; font-size:9px; color:#fcd34d;" x-text="'(' + attentionItems.length + ')'"></span>
+        </template>
+      </button>
     </div>
   </header>
 
-  <!-- ── Main content ─────────────────────────────────────────────────────── -->
-  <main class="cockpit-main">
+  <!-- ── Body ────────────────────────────────────────────────────────────── -->
+  <div class="cockpit-body">
 
-    <!-- Loading state -->
-    <div x-show="loading" class="initiative-grid">
-      <template x-for="i in 6" :key="i">
-        <div class="panel" style="padding: 12px 14px; border-left: 3px solid #1e2235;">
-          <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px;"></div>
-          <div class="skeleton" style="height: 9px; width: 35%; margin-bottom: 12px;"></div>
-          <div class="flex gap-1">
-            <div class="skeleton" style="height: 16px; width: 40px;"></div>
-            <div class="skeleton" style="height: 16px; width: 40px;"></div>
-            <div class="skeleton" style="height: 16px; width: 40px;"></div>
+    <!-- ── TAB: OVERVIEW ───────────────────────────────────────────────── -->
+    <div class="tab-pane" :class="{active: activeTab==='overview'}">
+
+      <!-- Loading -->
+      <div x-show="loading">
+        <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:28px;">
+          <template x-for="i in 3" :key="i">
+            <div class="skeleton" style="height:80px; width:200px; border-radius:6px;"></div>
+          </template>
+        </div>
+        <div class="initiative-grid">
+          <template x-for="i in 6" :key="i">
+            <div class="panel" style="padding:12px 14px; border-left:3px solid #1e2235;">
+              <div class="skeleton" style="height:12px; width:60%; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:9px; width:35%; margin-bottom:12px;"></div>
+              <div style="display:flex; gap:4px;">
+                <div class="skeleton" style="height:16px; width:40px;"></div>
+                <div class="skeleton" style="height:16px; width:40px;"></div>
+                <div class="skeleton" style="height:16px; width:40px;"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div x-show="!loading && error" class="empty-state">
+        <div style="color:#ef4444; margin-bottom:4px;">error loading data</div>
+        <div x-text="error"></div>
+      </div>
+
+      <!-- Content -->
+      <div x-show="!loading && !error">
+        <!-- Mission cards -->
+        <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:#475569; margin-bottom:12px;">Missions</div>
+        <div class="mission-cards-row">
+          <template x-for="m in missions" :key="m.id">
+            <div class="mission-card">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13px; font-weight:600; color:#e2e8f0;" x-text="m.alias || m.id"></div>
+                  <div style="font-size:10px; color:#475569; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="m.description || '—'"></div>
+                </div>
+                <span class="badge" :class="'badge-' + (m.operational ? 'operational' : (m.stage || 'seed'))" x-text="m.operational ? 'operational' : (m.stage_label || m.stage || 'seed')"></span>
+              </div>
+              <!-- Progress bar -->
+              <template x-if="m.progress !== undefined">
+                <div>
+                  <div class="progress-track">
+                    <div class="progress-fill"
+                      :class="m.progress >= 100 ? 'complete' : m.progress >= 60 ? 'high' : ''"
+                      :style="'width:' + Math.min(100, m.progress || 0) + '%'"></div>
+                  </div>
+                  <div style="font-size:9px; color:#475569; margin-top:3px; display:flex; justify-content:space-between;">
+                    <span x-text="m.next_feature ? 'next: ' + m.next_feature : ''"></span>
+                    <span x-text="(m.progress || 0) + '%'"></span>
+                  </div>
+                </div>
+              </template>
+              <!-- Module counts -->
+              <div style="display:flex; gap:8px; margin-top:8px; font-size:9px;">
+                <span style="color:#475569;" x-show="m.module_counts">
+                  <template x-if="m.module_counts">
+                    <span>
+                      <span x-text="((m.module_counts && m.module_counts.draft) || 0) + ((m.module_counts && m.module_counts.final) || 0)"></span> modules ·
+                      <span style="color:#4ade80;" x-text="(m.module_counts && m.module_counts.final) || 0"></span> final ·
+                      <span style="color:#6366f1;" x-text="(m.module_counts && m.module_counts.draft) || 0"></span> draft
+                      <template x-if="m.module_counts && m.module_counts.archived > 0">
+                        <span> · <span style="color:#64748b;" x-text="m.module_counts.archived"></span> archived</span>
+                      </template>
+                    </span>
+                  </template>
+                </span>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Mission filter tabs -->
+        <div style="display:flex; align-items:center; gap:2px; margin-bottom:16px; border-bottom:1px solid var(--color-border);">
+          <button class="tab-btn" :class="{active: filterMission==='all'}" @click="filterMission='all'">all</button>
+          <template x-for="m in missions" :key="m.id">
+            <button class="tab-btn" :class="{active: filterMission===m.id}" @click="filterMission=m.id" x-text="m.alias || m.id"></button>
+          </template>
+        </div>
+
+        <!-- Section label -->
+        <div class="section-label">
+          <span x-text="filterMission === 'all' ? 'all modules' : filterMission"></span>
+          <span style="color:#334155; margin: 0 6px;">·</span>
+          <span x-text="filteredModules.length + ' total'"></span>
+        </div>
+
+        <!-- Module grid -->
+        <div class="initiative-grid">
+          <template x-for="mod in filteredModules" :key="mod.mission + '/' + mod.module">
+            <div
+              x-data="initiativeCard(mod)"
+              class="initiative-card"
+              :class="[borderClass, isShipped ? 'shipped-dim' : '']"
+              @click="toggle()"
+            >
+              <!-- Card header -->
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:12px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="title"></div>
+                  <div style="font-size:10px; color:#475569; margin-top:2px;">
+                    <span x-text="mod.mission || '—'"></span>
+                    <span style="color:#2a3045; margin:0 3px;">·</span>
+                    <span x-text="mod.module || '—'"></span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                  <span class="status-dot" :class="dotClass"></span>
+                  <span class="badge" :class="badgeClass" x-text="statusLabel"></span>
+                  <svg class="expand-chevron" :class="{open}" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Artifact pills -->
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:10px;">
+                <template x-for="artifact in artifacts" :key="artifact.type">
+                  <span class="artifact-pill" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
+                </template>
+              </div>
+
+              <!-- Results summary if available -->
+              <template x-if="mod.results_summary">
+                <div style="margin-top:6px; font-size:10px; color:#64748b;" x-text="mod.results_summary"></div>
+              </template>
+
+              <!-- Expanded detail -->
+              <div x-show="open" @click.stop>
+                <div style="height:1px; background:var(--color-border); margin:10px 0;"></div>
+
+                <!-- Problem -->
+                <template x-if="problem">
+                  <div style="font-size:11px; color:#64748b; line-height:1.6; margin-bottom:8px;" x-text="problem"></div>
+                </template>
+
+                <!-- Review decision -->
+                <template x-if="mod.review_decision">
+                  <div style="font-size:10px; margin-bottom:6px;">
+                    <span style="color:#475569;">review: </span>
+                    <span :style="mod.review_decision === 'approved' ? 'color:#4ade80;' : mod.review_decision === 'rejected' ? 'color:#f87171;' : 'color:#94a3b8;'" x-text="mod.review_decision"></span>
+                  </div>
+                </template>
+
+                <!-- Tags -->
+                <template x-if="tags.length > 0">
+                  <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+                    <template x-for="tag in tags" :key="tag">
+                      <span class="tag" x-text="tag"></span>
+                    </template>
+                  </div>
+                </template>
+
+                <!-- Artifact detail -->
+                <div>
+                  <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:#334155; margin-bottom:4px;">artifacts</div>
+                  <template x-for="artifact in artifacts" :key="artifact.type">
+                    <div class="artifact-row">
+                      <svg x-show="artifact.present" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <circle cx="5" cy="5" r="4" fill="#4ade8022"/>
+                        <path d="M3 5l1.5 1.5L7 3.5" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <svg x-show="!artifact.present" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <circle cx="5" cy="5" r="4" fill="#33415522"/>
+                        <path d="M3.5 3.5l3 3M6.5 3.5l-3 3" stroke="#475569" stroke-width="1.2" stroke-linecap="round"/>
+                      </svg>
+                      <span :class="artifact.present ? 'artifact-present' : 'artifact-absent'" x-text="artifact.type"></span>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Link to plan if plan exists -->
+                <template x-if="artifacts.some(a => a.type === 'plan' && a.present)">
+                  <div style="margin-top:8px;">
+                    <a :href="'/plan-view?m=' + mod.mission + '&mod=' + mod.module"
+                       style="font-size:10px; color:#6366f1; text-decoration:none;"
+                       @click.stop>view plan →</a>
+                  </div>
+                </template>
+
+                <div style="margin-top:8px; font-size:9px; color:#2a3045;" x-text="mod.mission + '/' + mod.module"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Empty -->
+        <div x-show="filteredModules.length === 0 && !loading" class="empty-state">no modules found</div>
+      </div>
+    </div>
+
+    <!-- ── TAB: PIPELINE ───────────────────────────────────────────────── -->
+    <div class="tab-pane flex-pane" :class="{active: activeTab==='pipeline'}">
+      <div class="pipeline-container">
+        <div class="pipeline-board">
+          <template x-for="phase in phases" :key="phase.status">
+            <div class="phase-col">
+              <div class="phase-col-header">
+                <span class="status-dot" :class="'dot-' + phase.status"></span>
+                <span class="phase-col-title" :style="'color: var(--color-' + phase.status + ')'">
+                  <span x-text="phase.status"></span>
+                </span>
+                <span class="phase-col-count" x-text="'(' + phase.modules.length + ')'"></span>
+              </div>
+
+              <template x-if="phase.modules.length === 0">
+                <div class="empty-col">—</div>
+              </template>
+
+              <!-- Group by mission -->
+              <template x-for="missionGroup in phase.byMission" :key="missionGroup.mission">
+                <div>
+                  <div class="pipeline-mission-hdr">
+                    <span x-text="missionGroup.mission"></span>
+                  </div>
+                  <template x-for="mod in missionGroup.modules" :key="mod.mission + '/' + mod.module">
+                    <div class="module-card" :class="['border-' + phase.status, phase.status === 'shipped' ? 'shipped-dim' : '']">
+                      <div style="font-size:11px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                           x-text="(mod.data && mod.data.id) || mod.module || '—'"></div>
+                      <div style="font-size:9px; color:#475569; margin-top:2px;" x-text="mod.module"></div>
+                      <!-- Artifact pills compact -->
+                      <div style="display:flex; gap:3px; margin-top:6px; flex-wrap:wrap;">
+                        <template x-for="artifact in (mod.artifacts || [])" :key="artifact.type">
+                          <span class="artifact-pill" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: PLAN ───────────────────────────────────────────────────── -->
+    <div class="tab-pane" :class="{active: activeTab==='plan'}">
+      <!-- Selector -->
+      <div class="plan-selector-bar">
+        <label>Module with plan:</label>
+        <select class="plan-select" x-model="selectedPlanKey" @change="loadPlan()">
+          <option value="">— select a module —</option>
+          <template x-for="mod in modulesWithPlan" :key="mod.mission + '/' + mod.module">
+            <option :value="mod.mission + '/' + mod.module" x-text="mod.mission + ' / ' + mod.module"></option>
+          </template>
+        </select>
+        <template x-if="planLoading">
+          <span style="font-size:11px; color:#475569;">loading…</span>
+        </template>
+        <template x-if="selectedPlanKey && !planLoading">
+          <a :href="'/plan-view?m=' + selectedPlanKey.split('/')[0] + '&mod=' + selectedPlanKey.split('/')[1]"
+             style="font-size:11px; color:#6366f1; text-decoration:none;">open full view →</a>
+        </template>
+      </div>
+
+      <!-- Plan content -->
+      <template x-if="planData && !planLoading">
+        <div>
+          <!-- Requirements panel -->
+          <template x-if="planData.requirements && planData.requirements.length > 0">
+            <div class="reqs-panel" style="margin-bottom:20px;">
+              <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:#475569; margin-bottom:10px;">Requirements</div>
+              <template x-for="req in planData.requirements" :key="req.id">
+                <div class="req-row">
+                  <span class="req-id" x-text="req.id"></span>
+                  <span class="req-text" x-text="req.text"></span>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Stats -->
+          <div style="display:flex; gap:16px; margin-bottom:16px; font-size:11px; color:#475569;">
+            <span><strong style="color:#e2e8f0;" x-text="planData.tasks ? planData.tasks.length : 0"></strong> tasks</span>
+            <span><strong style="color:#e2e8f0;" x-text="planBatchCount"></strong> batches</span>
+            <template x-if="planData.results && planData.results.length > 0">
+              <span>
+                <strong style="color:#4ade80;" x-text="planData.results.filter(r => r.status === 'success').length"></strong> success
+                <strong style="color:#fde047; margin-left:8px;" x-text="planData.results.filter(r => r.status === 'partial').length"></strong> partial
+                <strong style="color:#f87171; margin-left:8px;" x-text="planData.results.filter(r => r.status === 'failed').length"></strong> failed
+              </span>
+            </template>
           </div>
+
+          <!-- Batches -->
+          <template x-for="batch in planBatches" :key="batch.num">
+            <div class="batch-section">
+              <div class="batch-header">
+                <span x-text="batch.num === 0 ? 'Batch —' : 'Batch ' + batch.num"></span>
+                <template x-if="batch.tasks.length > 1">
+                  <span style="color:#334155; font-size:9px;" x-text="batch.tasks.length + ' tasks in parallel'"></span>
+                </template>
+              </div>
+              <div class="plan-grid">
+                <template x-for="task in batch.tasks" :key="task.task">
+                  <div class="plan-card" :class="planCardClass(task.task)">
+                    <!-- Task ID + status -->
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <span style="font-size:11px; font-weight:700; color:#64748b;" x-text="task.task"></span>
+                      <template x-if="getResult(task.task)">
+                        <span class="res-badge" :class="'res-' + getResult(task.task).status" x-text="getResult(task.task).status"></span>
+                      </template>
+                    </div>
+                    <!-- Title -->
+                    <div style="font-size:12px; font-weight:500; color:#e2e8f0; line-height:1.4;" x-text="task.title || task.task"></div>
+                    <!-- Badges -->
+                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                      <template x-if="task.executor">
+                        <span class="exec-badge" :class="execBadgeClass(task.executor)" x-text="task.executor"></span>
+                      </template>
+                      <template x-if="task.isolation">
+                        <span class="iso-badge" :class="task.isolation === 'worktree' ? 'iso-worktree' : 'iso-none'" x-text="task.isolation"></span>
+                      </template>
+                      <template x-if="task.batch !== undefined">
+                        <span style="font-size:9px; color:#475569;">b<span x-text="task.batch"></span></span>
+                      </template>
+                    </div>
+                    <!-- Dependencies -->
+                    <template x-if="task.depends_on">
+                      <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                        <span style="font-size:9px; color:#475569;">deps:</span>
+                        <template x-for="dep in splitComma(task.depends_on)" :key="dep">
+                          <span class="dep-badge" x-text="dep"></span>
+                        </template>
+                      </div>
+                    </template>
+                    <!-- Requirements refs -->
+                    <template x-if="task.requirements">
+                      <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                        <span style="font-size:9px; color:#475569;">reqs:</span>
+                        <template x-for="req in splitComma(task.requirements)" :key="req">
+                          <span class="req-ref-badge" x-text="req"></span>
+                        </template>
+                      </div>
+                    </template>
+                    <!-- Result summary -->
+                    <template x-if="getResult(task.task) && getResult(task.task).summary">
+                      <div style="font-size:10px; color:#94a3b8; border-top:1px solid var(--color-border); padding-top:6px;" x-text="getResult(task.task).summary"></div>
+                    </template>
+                    <!-- Result errors -->
+                    <template x-if="getResult(task.task) && getResult(task.task).errors">
+                      <div style="font-size:10px; color:#f87171; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.2); border-radius:4px; padding:6px;" x-text="getResult(task.task).errors"></div>
+                    </template>
+                    <!-- Acceptance criteria (collapsible) -->
+                    <template x-if="task.acceptance">
+                      <div style="border-top:1px solid var(--color-border); padding-top:6px;">
+                        <button class="toggle-btn" :class="{open: isAccOpen(task.task)}"
+                          @click="toggleAcc(task.task)"
+                          style="display:flex; align-items:center; gap:4px; font-size:10px; color:#475569; background:none; border:none; cursor:pointer; padding:0; font-family:var(--font-mono);">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          acceptance criteria
+                        </button>
+                        <div class="acceptance-content" :class="{open: isAccOpen(task.task)}"
+                          style="font-size:10px; color:#64748b; background:rgba(10,13,22,0.8); border-radius:4px; padding:8px; margin-top:4px; white-space:pre-wrap; font-family:var(--font-mono);"
+                          x-text="task.acceptance"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template x-if="!selectedPlanKey && !planLoading">
+        <div class="empty-state">select a module with a plan to view its tasks</div>
+      </template>
+    </div>
+
+    <!-- ── TAB: ATTENTION ──────────────────────────────────────────────── -->
+    <div class="tab-pane" :class="{active: activeTab==='attention'}">
+      <!-- Loading -->
+      <div x-show="attentionLoading" style="color:#475569; font-size:11px;">loading…</div>
+
+      <template x-if="!attentionLoading">
+        <div>
+          <!-- Needs attention -->
+          <div style="margin-bottom:24px;">
+            <div class="section-label">Needs Attention</div>
+            <template x-if="attentionItems.length === 0">
+              <div class="empty-state">no items need attention</div>
+            </template>
+            <template x-if="attentionItems.length > 0">
+              <div class="panel" style="overflow:hidden;">
+                <table class="attention-table">
+                  <thead>
+                    <tr>
+                      <th>project</th>
+                      <th>action</th>
+                      <th>type</th>
+                      <th>context</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="item in attentionItems" :key="(item.project || '') + (item.action || '')">
+                      <tr>
+                        <td style="color:#e2e8f0; font-weight:500;" x-text="item.project || '—'"></td>
+                        <td x-text="item.action || '—'"></td>
+                        <td>
+                          <span class="type-badge" :class="item.type === 'external' ? 'type-external' : item.type === 'internal' ? 'type-internal' : 'type-default'"
+                                x-text="item.type || '—'"></span>
+                        </td>
+                        <td style="font-size:10px; color:#475569;" x-text="item.context || '—'"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+          </div>
+
+          <!-- Limbo -->
+          <template x-if="limboItems.length > 0">
+            <div>
+              <div class="section-label">Limbo</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                <template x-for="item in limboItems" :key="item">
+                  <span style="font-size:11px; background:rgba(71,85,105,0.15); color:#64748b; border:1px solid #334155; border-radius:4px; padding:2px 8px;" x-text="item"></span>
+                </template>
+              </div>
+            </div>
+          </template>
         </div>
       </template>
     </div>
 
-    <!-- Error state -->
-    <div x-show="!loading && error" class="empty-state">
-      <div style="color: #ef4444; margin-bottom: 4px;">error</div>
-      <div x-text="error"></div>
-    </div>
-
-    <!-- Empty state -->
-    <div x-show="!loading && !error && totalCount === 0" class="empty-state">
-      no initiatives found
-    </div>
-
-    <!-- Content -->
-    <div x-show="!loading && !error && totalCount > 0">
-
-      <!-- Section label -->
-      <div class="section-label">
-        <span x-text="activeProject === 'all' ? 'all initiatives' : activeProject"></span>
-        <span style="color:#334155; margin-left:6px;">·</span>
-        <span style="margin-left:6px;" x-text="filteredInitiatives.length + ' total'"></span>
-      </div>
-
-      <!-- Initiative grid -->
-      <div class="initiative-grid">
-        <template x-for="doc in filteredInitiatives" :key="(doc.project || '') + '/' + (doc.initiative || doc.slug || '')">
-          <div
-            x-data="initiativeCard(doc)"
-            class="initiative-card"
-            :class="[borderClass, isShipped ? 'shipped-dim' : '']"
-            @click="toggle()"
-          >
-            <!-- Card header -->
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <!-- Title -->
-                <div style="font-size:12px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="title"></div>
-                <!-- Project + slug -->
-                <div style="font-size:10px; color:#475569; margin-top:2px;">
-                  <span x-text="doc.project || '—'"></span>
-                  <span style="color:#2a3045; margin: 0 3px;">·</span>
-                  <span x-text="doc.initiative || doc.slug || '—'"></span>
-                </div>
-              </div>
-              <!-- Status badge -->
-              <div class="flex items-center gap-1.5 flex-shrink-0">
-                <span class="status-dot" :class="dotClass"></span>
-                <span class="badge" :class="badgeClass" x-text="statusLabel"></span>
-                <!-- Expand chevron -->
-                <svg class="expand-chevron w-3 h-3 flex-shrink-0" :class="{ open }" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-            </div>
-
-            <!-- Artifact pills (always visible) -->
-            <div class="flex flex-wrap gap-1 mt-2.5">
-              <template x-for="artifact in artifacts" :key="artifact.type">
-                <span class="artifact-pill" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
-              </template>
-            </div>
-
-            <!-- Expanded detail -->
-            <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" @click.stop>
-
-              <!-- Divider -->
-              <div style="height:1px; background: var(--color-border); margin: 10px 0;"></div>
-
-              <!-- Problem statement -->
-              <template x-if="problem">
-                <div style="font-size:11px; color:#64748b; line-height:1.6; margin-bottom:8px;" x-text="problem"></div>
-              </template>
-
-              <!-- Tags -->
-              <template x-if="tags.length > 0">
-                <div class="flex flex-wrap gap-1 mb-2">
-                  <template x-for="tag in tags" :key="tag">
-                    <span class="tag" x-text="tag"></span>
-                  </template>
-                </div>
-              </template>
-
-              <!-- Artifact detail rows -->
-              <div>
-                <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:#334155; margin-bottom:4px;">artifacts</div>
-                <template x-for="artifact in artifacts" :key="artifact.type">
-                  <div class="artifact-row">
-                    <svg x-show="artifact.present" class="flex-shrink-0" width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <circle cx="5" cy="5" r="4" fill="#4ade8022"/>
-                      <path d="M3 5l1.5 1.5L7 3.5" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <svg x-show="!artifact.present" class="flex-shrink-0" width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <circle cx="5" cy="5" r="4" fill="#33415522"/>
-                      <path d="M3.5 3.5l3 3M6.5 3.5l-3 3" stroke="#475569" stroke-width="1.2" stroke-linecap="round"/>
-                    </svg>
-                    <span :class="artifact.present ? 'artifact-present' : 'artifact-absent'" x-text="artifact.type"></span>
-                  </div>
-                </template>
-              </div>
-
-              <!-- Path -->
-              <div style="margin-top:8px; font-size:9px; color:#2a3045; word-break:break-all;" x-text="doc.project + '/' + doc.initiative"></div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-
-  </main>
+  </div><!-- end cockpit-body -->
 </div>
+
+<script>
+document.addEventListener("alpine:init", function () {
+  var ARTIFACT_TYPES = ["draft", "prd", "plan", "results", "review"];
+  var STATUS_ORDER = ["seed","exploring","planned","ready","building","done","approved","shipped"];
+
+  Alpine.data("cockpitApp", function () {
+    return {
+      // state
+      loading: true,
+      error: null,
+      missions: [],
+      allModules: [],
+      statusMapLocal: {},
+
+      // tabs
+      activeTab: "overview",
+      filterMission: "all",
+
+      // plan tab
+      planData: null,
+      planLoading: false,
+      selectedPlanKey: "",
+      accOpen: {},
+
+      // attention tab
+      attentionLoading: true,
+      attentionItems: [],
+      limboItems: [],
+
+      init: function () {
+        var self = this;
+        this.fetchAll();
+        this.fetchAttention();
+
+        // WS integration — re-fetch on refresh
+        var origRefresh = null;
+        var checkStore = setInterval(function () {
+          if (window.Alpine && typeof Alpine.store === "function") {
+            clearInterval(checkStore);
+            var wsStore = Alpine.store("workspace");
+            if (wsStore) {
+              origRefresh = wsStore.refresh.bind(wsStore);
+              wsStore.refresh = function () {
+                self.fetchAll();
+                self.fetchAttention();
+              };
+            }
+          }
+        }, 200);
+      },
+
+      fetchAll: function () {
+        var self = this;
+        self.loading = true;
+        self.error = null;
+
+        var missionsPromise = fetch("/api/missions")
+          .then(function (r) { return r.ok ? r.json() : Promise.reject("HTTP " + r.status); })
+          .then(function (d) { self.missions = d.missions || []; });
+
+        var modulesPromise = fetch("/api/initiatives")
+          .then(function (r) { return r.ok ? r.json() : Promise.reject("HTTP " + r.status); })
+          .then(function (d) {
+            var docs = d.documents || [];
+            self.allModules = self.groupDocs(docs);
+            self.fetchStatuses();
+          });
+
+        Promise.all([missionsPromise, modulesPromise])
+          .then(function () { self.loading = false; })
+          .catch(function (err) {
+            self.error = String(err);
+            self.loading = false;
+          });
+      },
+
+      groupDocs: function (docs) {
+        var grouped = {};
+        docs.forEach(function (doc) {
+          var key = doc.mission + "/" + doc.module;
+          if (!grouped[key]) {
+            grouped[key] = {
+              mission: doc.mission,
+              module: doc.module,
+              data: {},
+              tags: [],
+              artifacts: [],
+              results_summary: null,
+              review_decision: null,
+              cycle_count: 0,
+              problem: null,
+            };
+          }
+          var g = grouped[key];
+          if (doc.type === "draft.md" && doc.data) {
+            g.data = doc.data;
+            g.tags = doc.data.tags || [];
+          }
+          if (doc.results_summary) g.results_summary = doc.results_summary;
+          if (doc.review_decision) g.review_decision = doc.review_decision;
+          if (doc.cycle_count) g.cycle_count = doc.cycle_count;
+          if (doc.problem) g.problem = doc.problem;
+        });
+
+        return Object.values(grouped).map(function (g) {
+          var presentTypes = {};
+          docs.filter(function (d) { return d.mission === g.mission && d.module === g.module; })
+            .forEach(function (d) {
+              var name = d.type.replace(".md", "");
+              presentTypes[name] = true;
+            });
+          g.artifacts = ARTIFACT_TYPES.map(function (t) { return { type: t, present: !!presentTypes[t] }; });
+          return g;
+        });
+      },
+
+      fetchStatuses: function () {
+        var self = this;
+        self.allModules.forEach(function (mod) {
+          var key = mod.mission + "/" + mod.module;
+          fetch("/api/initiatives/" + mod.mission + "/" + mod.module + "/status")
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+              if (d && d.status) {
+                self.statusMapLocal[key] = d.status;
+                // Also update Alpine store so initiativeCard components pick it up
+                if (window.Alpine && typeof Alpine.store === "function") {
+                  Alpine.store("workspace").statusMap[key] = d.status;
+                }
+              }
+            })
+            .catch(function () {});
+        });
+      },
+
+      fetchAttention: function () {
+        var self = this;
+        self.attentionLoading = true;
+        fetch("/api/cockpit-manual")
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            self.attentionItems = (d && d.needs_attention) ? d.needs_attention : [];
+            self.limboItems = (d && d.limbo) ? d.limbo : [];
+            self.attentionLoading = false;
+          })
+          .catch(function () {
+            self.attentionLoading = false;
+          });
+      },
+
+      get filteredModules() {
+        var self = this;
+        if (this.filterMission === "all") return this.allModules;
+        return this.allModules.filter(function (m) { return m.mission === self.filterMission; });
+      },
+
+      get statusCounts() {
+        var counts = {};
+        var self = this;
+        this.allModules.forEach(function (mod) {
+          var key = mod.mission + "/" + mod.module;
+          var s = self.statusMapLocal[key] || "seed";
+          counts[s] = (counts[s] || 0) + 1;
+        });
+        return counts;
+      },
+
+      get modulesWithPlan() {
+        return this.allModules.filter(function (m) {
+          return m.artifacts && m.artifacts.some(function (a) { return a.type === "plan" && a.present; });
+        });
+      },
+
+      get phases() {
+        var self = this;
+        return STATUS_ORDER.map(function (status) {
+          var mods = self.allModules.filter(function (m) {
+            var key = m.mission + "/" + m.module;
+            return (self.statusMapLocal[key] || "seed") === status;
+          });
+          // Group by mission
+          var byMissionMap = {};
+          mods.forEach(function (m) {
+            if (!byMissionMap[m.mission]) byMissionMap[m.mission] = [];
+            byMissionMap[m.mission].push(m);
+          });
+          var byMission = Object.keys(byMissionMap).sort().map(function (mission) {
+            return { mission: mission, modules: byMissionMap[mission] };
+          });
+          return { status: status, modules: mods, byMission: byMission };
+        });
+      },
+
+      // Plan tab helpers
+      loadPlan: function () {
+        if (!this.selectedPlanKey) { this.planData = null; return; }
+        var self = this;
+        var parts = this.selectedPlanKey.split("/");
+        self.planLoading = true;
+        fetch("/api/plans/" + parts[0] + "/" + parts[1])
+          .then(function (r) { return r.ok ? r.json() : Promise.reject("HTTP " + r.status); })
+          .then(function (d) { self.planData = d; self.planLoading = false; })
+          .catch(function () { self.planData = null; self.planLoading = false; });
+      },
+
+      get planBatches() {
+        if (!this.planData || !this.planData.tasks) return [];
+        var batches = {};
+        this.planData.tasks.forEach(function (t) {
+          var b = t.batch !== undefined ? t.batch : 0;
+          if (!batches[b]) batches[b] = [];
+          batches[b].push(t);
+        });
+        return Object.keys(batches).map(Number).sort(function (a, b) { return a - b; })
+          .map(function (num) { return { num: num, tasks: batches[num] }; });
+      },
+
+      get planBatchCount() {
+        return this.planBatches.length;
+      },
+
+      getResult: function (taskId) {
+        if (!this.planData || !this.planData.results) return null;
+        return this.planData.results.find(function (r) { return r.task === taskId; }) || null;
+      },
+
+      planCardClass: function (taskId) {
+        var r = this.getResult(taskId);
+        if (!r) return "";
+        return "result-" + (r.status || "");
+      },
+
+      execBadgeClass: function (executor) {
+        if (!executor) return "exec-default";
+        var e = executor.toLowerCase();
+        if (e.includes("sonnet")) return "exec-sonnet";
+        if (e.includes("haiku")) return "exec-haiku";
+        if (e.includes("opus")) return "exec-opus";
+        return "exec-default";
+      },
+
+      splitComma: function (str) {
+        if (!str) return [];
+        return str.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      },
+
+      isAccOpen: function (taskId) { return !!this.accOpen[taskId]; },
+      toggleAcc: function (taskId) { this.accOpen[taskId] = !this.accOpen[taskId]; },
+    };
+  });
+});
+</script>
 
 </body>
 </html>

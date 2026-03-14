@@ -341,10 +341,7 @@ if [ -d "$DISCOVERY_DIR" ]; then
 fi
 ```
 
-Then refresh Mission Control to reflect the shipped state:
-```bash
-bash ~/git/launchpad/scripts/cockpit.sh --refresh
-```
+Mission Control auto-refreshes via the workspace server watcher — no explicit refresh needed.
 
 ---
 

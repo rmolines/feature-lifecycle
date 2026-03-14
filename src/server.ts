@@ -5,6 +5,9 @@ import {
   handleGetStatus,
   handleGetDocument,
 } from "./api/initiatives.js";
+import { handleListMissions } from "./api/missions.js";
+import { handleGetPlan } from "./api/plans.js";
+import { handleCockpitManual } from "./api/cockpit-manual.js";
 import { startWatcher } from "./watcher.js";
 
 const startTime = Date.now();
@@ -34,24 +37,44 @@ export function startHttpServer(port: number): ReturnType<typeof Bun.serve> {
         return new Response("WebSocket upgrade failed", { status: 400 });
       }
 
-      // API: GET /api/initiatives (with optional ?type=&project= params)
-      if (req.method === "GET" && pathname === "/api/initiatives") {
-        const type = url.searchParams.get("type") ?? undefined;
-        const project = url.searchParams.get("project") ?? undefined;
-        return handleList({ type, project });
+      // API: GET /api/missions
+      if (req.method === "GET" && pathname === "/api/missions") {
+        return handleListMissions();
       }
 
-      // API: GET /api/initiatives/:project/:slug/status
-      // API: GET /api/initiatives/:project/:slug/:docType
+      // API: GET /api/cockpit-manual
+      if (req.method === "GET" && pathname === "/api/cockpit-manual") {
+        return handleCockpitManual();
+      }
+
+      // API: GET /api/plans/:mission/:module
+      if (req.method === "GET" && pathname.startsWith("/api/plans/")) {
+        const segments = pathname.slice("/api/plans/".length).split("/");
+        if (segments.length === 2) {
+          const [mission, module] = segments;
+          return handleGetPlan(mission, module);
+        }
+        return new Response("Not Found", { status: 404 });
+      }
+
+      // API: GET /api/initiatives (with optional ?type=&mission= params)
+      if (req.method === "GET" && pathname === "/api/initiatives") {
+        const type = url.searchParams.get("type") ?? undefined;
+        const mission = url.searchParams.get("mission") ?? undefined;
+        return handleList({ type, mission });
+      }
+
+      // API: GET /api/initiatives/:mission/:slug/status
+      // API: GET /api/initiatives/:mission/:slug/:docType
       if (req.method === "GET" && pathname.startsWith("/api/initiatives/")) {
         const segments = pathname.slice("/api/initiatives/".length).split("/");
         if (segments.length === 3) {
-          const [project, slug, last] = segments;
+          const [mission, slug, last] = segments;
           if (last === "status") {
-            return handleGetStatus(project, slug);
+            return handleGetStatus(mission, slug);
           }
           // docType like "draft.md", "prd.md", etc.
-          return handleGetDocument(project, slug, last);
+          return handleGetDocument(mission, slug, last);
         }
         return new Response("Not Found", { status: 404 });
       }

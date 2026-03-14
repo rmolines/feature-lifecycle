@@ -1,5 +1,17 @@
 # Changelog
 
+## workspace-server-migration — 2026-03-13
+**Type:** migration
+**PRD:** ~/.claude/initiatives/fl/workspace-server-migration/draft.md
+
+Migrated all HTML views from bash scripts (cockpit.sh, mission-view.sh, plan-view.sh)
+to the workspace server (Bun HTTP/WS on port 3333). Unified domain naming
+(mission/module/stage) across API, views, and commands. Aligned status derivation
+between bash and TypeScript. Added new API endpoints (/api/missions, /api/plans,
+/api/cockpit-manual). Built full cockpit (4 tabs), mission-view, and plan-view in
+views/. All skills now open views via server URLs. Deleted legacy bash HTML scripts
+and templates.
+
 ## worktree-commit-gap — PR #12 — 2026-03-13
 **Type:** fix
 **PRD:** ~/.claude/initiatives/fl/worktree-commit-gap/prd.md

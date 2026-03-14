@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission View — Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/views/shared/tokens.css">
+<script src="/views/shared/components.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<script src="/views/shared/ws-client.js"></script>
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .mv-header {
+    flex-shrink: 0;
+    background: var(--color-panel);
+    border-bottom: 1px solid var(--color-border);
+    padding: 16px 24px;
+  }
+
+  .breadcrumb {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .breadcrumb a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Stage progress strip ────────────────────────────────────────────── */
+  .stage-strip {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+  }
+  .stage-segment {
+    height: 3px;
+    flex: 1;
+    border-radius: 2px;
+    background: #1e2235;
+    transition: background 0.2s;
+  }
+  .stage-segment.active { background: var(--color-accent); }
+  .stage-segment.done   { background: var(--color-success); }
+
+  /* ── Main content ────────────────────────────────────────────────────── */
+  .mv-main { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* ── Status group ────────────────────────────────────────────────────── */
+  .status-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+  .status-group-header:first-child { margin-top: 0; }
+  .status-group-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+  .status-group-count {
+    font-size: 9px;
+    color: #334155;
+  }
+
+  /* ── Module card ─────────────────────────────────────────────────────── */
+  .mv-module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .mv-card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    border-left-width: 3px;
+    border-left-style: solid;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .mv-card:hover { transform: translateY(-1px); filter: brightness(1.15); }
+
+  /* ── Artifact pills ──────────────────────────────────────────────────── */
+  .artifact-pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    font-weight: 500; letter-spacing: 0.03em;
+  }
+  .artifact-pill.present {
+    background: rgba(74,222,128,0.1); color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.2);
+  }
+  .artifact-pill.absent {
+    background: rgba(71,85,105,0.1); color: #334155;
+    border: 1px solid rgba(71,85,105,0.15);
+  }
+
+  /* ── Expand ──────────────────────────────────────────────────────────── */
+  .expand-chevron { transition: transform 0.15s ease; color: var(--color-text-secondary); }
+  .expand-chevron.open { transform: rotate(180deg); }
+
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .empty-state {
+    color: #3a4560; font-size: 11px; text-align: center;
+    padding: 40px 20px; border: 1px dashed #252a3a; border-radius: var(--radius-md);
+  }
+</style>
+</head>
+<body>
+<div x-data="missionView()" x-init="init()" style="display:flex; flex-direction:column; height:100%;">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="mv-header">
+    <div class="breadcrumb">
+      <a href="/cockpit">cockpit</a>
+      <span>›</span>
+      <span x-text="missionAlias || '…'"></span>
+    </div>
+
+    <!-- Loading header skeleton -->
+    <div x-show="loading">
+      <div class="skeleton" style="height:18px; width:200px; margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:11px; width:320px;"></div>
+    </div>
+
+    <!-- Mission header -->
+    <div x-show="!loading && mission">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h1 style="font-size:18px; font-weight:600; color:#e2e8f0; margin:0;" x-text="mission ? (mission.alias || mission.id) : '—'"></h1>
+            <span class="badge" :class="'badge-' + (mission ? (mission.stage || 'seed') : 'seed')"
+                  x-text="mission ? (mission.stage_label || mission.stage || 'seed') : ''"></span>
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:4px;" x-text="mission ? (mission.description || '') : ''"></div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:flex; gap:16px; flex-shrink:0; font-size:11px; color:#475569;">
+          <div>
+            <div style="font-size:18px; font-weight:600; color:#e2e8f0;" x-text="modules.length"></div>
+            <div>modules</div>
+          </div>
+          <template x-if="mission && mission.module_counts && mission.module_counts.archived > 0">
+            <div>
+              <div style="font-size:18px; font-weight:600; color:#64748b;" x-text="mission.module_counts.archived"></div>
+              <div>archived</div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Stage strip (lifecycle: discovery → planning → delivery → review → ship) -->
+      <div class="stage-strip" style="margin-top:12px;">
+        <template x-for="(seg, i) in stageSegments" :key="i">
+          <div class="stage-segment" :class="seg.cls" :title="seg.label"></div>
+        </template>
+      </div>
+      <div style="display:flex; gap:4px; margin-top:4px; font-size:9px; color:#334155;">
+        <template x-for="seg in stageSegments" :key="seg.label">
+          <span style="flex:1; text-align:center;" x-text="seg.label"></span>
+        </template>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div x-show="!loading && error" style="color:#ef4444; font-size:12px;" x-text="error"></div>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────────────────────── -->
+  <main class="mv-main">
+    <!-- Loading skeleton -->
+    <div x-show="loading">
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px;">
+        <template x-for="i in 6" :key="i">
+          <div class="panel" style="padding:14px; border-left:3px solid #1e2235;">
+            <div class="skeleton" style="height:12px; width:55%; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:9px; width:35%; margin-bottom:12px;"></div>
+            <div style="display:flex; gap:4px;">
+              <div class="skeleton" style="height:16px; width:40px;"></div>
+              <div class="skeleton" style="height:16px; width:40px;"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div x-show="!loading && !error && modules.length === 0" class="empty-state">
+      no modules found for this mission
+    </div>
+
+    <!-- Grouped by status -->
+    <div x-show="!loading && !error && modules.length > 0">
+      <template x-for="group in groupedModules" :key="group.status">
+        <template x-if="group.modules.length > 0">
+          <div>
+            <div class="status-group-header">
+              <span class="status-dot" :class="'dot-' + group.status"></span>
+              <span class="status-group-label" x-text="group.status"></span>
+              <span class="status-group-count" x-text="'(' + group.modules.length + ')'"></span>
+            </div>
+            <div class="mv-module-grid">
+              <template x-for="mod in group.modules" :key="mod.mission + '/' + mod.module">
+                <div
+                  x-data="initiativeCard(mod)"
+                  class="mv-card"
+                  :class="[borderClass, isShipped ? 'shipped-dim' : '']"
+                  @click="toggle()"
+                >
+                  <!-- Card header -->
+                  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:12px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="title"></div>
+                      <div style="font-size:10px; color:#475569; margin-top:2px;" x-text="mod.module"></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <span class="status-dot" :class="dotClass"></span>
+                      <span class="badge" :class="badgeClass" x-text="statusLabel"></span>
+                      <svg class="expand-chevron" :class="{open}" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Artifact pills -->
+                  <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:10px;">
+                    <template x-for="artifact in artifacts" :key="artifact.type">
+                      <span class="artifact-pill" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
+                    </template>
+                  </div>
+
+                  <!-- Results summary -->
+                  <template x-if="mod.results_summary">
+                    <div style="margin-top:6px; font-size:10px; color:#64748b;" x-text="mod.results_summary"></div>
+                  </template>
+
+                  <!-- Expanded -->
+                  <div x-show="open" @click.stop>
+                    <div style="height:1px; background:var(--color-border); margin:10px 0;"></div>
+
+                    <!-- Problem -->
+                    <template x-if="problem">
+                      <div style="font-size:11px; color:#64748b; line-height:1.6; margin-bottom:8px;" x-text="problem"></div>
+                    </template>
+
+                    <!-- Review decision -->
+                    <template x-if="mod.review_decision">
+                      <div style="font-size:10px; margin-bottom:8px;">
+                        <span style="color:#475569;">review: </span>
+                        <span :style="mod.review_decision === 'approved' ? 'color:#4ade80;' : mod.review_decision === 'rejected' ? 'color:#f87171;' : 'color:#94a3b8;'"
+                              x-text="mod.review_decision"></span>
+                      </div>
+                    </template>
+
+                    <!-- Tags -->
+                    <template x-if="tags.length > 0">
+                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+                        <template x-for="tag in tags" :key="tag">
+                          <span class="tag" x-text="tag"></span>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- Artifacts detail -->
+                    <div>
+                      <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:#334155; margin-bottom:4px;">artifacts</div>
+                      <template x-for="artifact in artifacts" :key="artifact.type">
+                        <div class="artifact-row">
+                          <svg x-show="artifact.present" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <circle cx="5" cy="5" r="4" fill="#4ade8022"/>
+                            <path d="M3 5l1.5 1.5L7 3.5" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          <svg x-show="!artifact.present" width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <circle cx="5" cy="5" r="4" fill="#33415522"/>
+                            <path d="M3.5 3.5l3 3M6.5 3.5l-3 3" stroke="#475569" stroke-width="1.2" stroke-linecap="round"/>
+                          </svg>
+                          <span :class="artifact.present ? 'artifact-present' : 'artifact-absent'" x-text="artifact.type"></span>
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- Links -->
+                    <div style="display:flex; gap:12px; margin-top:10px; flex-wrap:wrap;">
+                      <template x-if="artifacts.some(a => a.type === 'plan' && a.present)">
+                        <a :href="'/plan-view?m=' + mod.mission + '&mod=' + mod.module"
+                           style="font-size:10px; color:#6366f1; text-decoration:none;"
+                           @click.stop>view plan →</a>
+                      </template>
+                    </div>
+
+                    <div style="margin-top:8px; font-size:9px; color:#2a3045;" x-text="mod.mission + '/' + mod.module"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </template>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var ARTIFACT_TYPES = ["draft", "prd", "plan", "results", "review"];
+  var STATUS_ORDER = ["seed","exploring","planned","ready","building","done","approved","shipped"];
+  var LIFECYCLE_STAGES = ["discovery","planning","delivery","review","ship"];
+  var STAGE_MAP = {
+    seed: 0, exploring: 0, planned: 1, ready: 2, building: 2, done: 3, approved: 4, shipped: 5
+  };
+
+  document.addEventListener("alpine:init", function () {
+    Alpine.data("missionView", function () {
+      return {
+        loading: true,
+        error: null,
+        missionAlias: "",
+        mission: null,
+        modules: [],
+        statusMapLocal: {},
+
+        init: function () {
+          var params = new URLSearchParams(location.search);
+          this.missionAlias = params.get("m") || "";
+          if (!this.missionAlias) {
+            this.error = "No mission specified. Add ?m=<alias> to the URL.";
+            this.loading = false;
+            return;
+          }
+          this.fetchData();
+        },
+
+        fetchData: function () {
+          var self = this;
+          self.loading = true;
+          self.error = null;
+
+          var missionsP = fetch("/api/missions")
+            .then(function (r) { return r.ok ? r.json() : Promise.reject("HTTP " + r.status); })
+            .then(function (d) {
+              var missions = d.missions || [];
+              self.mission = missions.find(function (m) {
+                return m.id === self.missionAlias || m.alias === self.missionAlias;
+              }) || null;
+              if (!self.mission && missions.length) {
+                // fallback: partial match
+                self.mission = missions.find(function (m) {
+                  return m.id.includes(self.missionAlias) || (m.alias && m.alias.includes(self.missionAlias));
+                }) || null;
+              }
+            });
+
+          var modsP = fetch("/api/initiatives?mission=" + encodeURIComponent(self.missionAlias))
+            .then(function (r) { return r.ok ? r.json() : Promise.reject("HTTP " + r.status); })
+            .then(function (d) {
+              var docs = d.documents || [];
+              self.modules = self.groupDocs(docs);
+              self.fetchStatuses();
+            });
+
+          Promise.all([missionsP, modsP])
+            .then(function () { self.loading = false; })
+            .catch(function (err) { self.error = String(err); self.loading = false; });
+        },
+
+        groupDocs: function (docs) {
+          var grouped = {};
+          docs.forEach(function (doc) {
+            var key = doc.mission + "/" + doc.module;
+            if (!grouped[key]) {
+              grouped[key] = {
+                mission: doc.mission,
+                module: doc.module,
+                data: {}, tags: [], artifacts: [],
+                results_summary: null, review_decision: null,
+                cycle_count: 0, problem: null,
+              };
+            }
+            var g = grouped[key];
+            if (doc.type === "draft.md" && doc.data) { g.data = doc.data; g.tags = doc.data.tags || []; }
+            if (doc.results_summary) g.results_summary = doc.results_summary;
+            if (doc.review_decision) g.review_decision = doc.review_decision;
+            if (doc.cycle_count) g.cycle_count = doc.cycle_count;
+            if (doc.problem) g.problem = doc.problem;
+          });
+
+          return Object.values(grouped).map(function (g) {
+            var presentTypes = {};
+            docs.filter(function (d) { return d.mission === g.mission && d.module === g.module; })
+              .forEach(function (d) { presentTypes[d.type.replace(".md","")] = true; });
+            g.artifacts = ARTIFACT_TYPES.map(function (t) { return { type: t, present: !!presentTypes[t] }; });
+            return g;
+          });
+        },
+
+        fetchStatuses: function () {
+          var self = this;
+          self.modules.forEach(function (mod) {
+            var key = mod.mission + "/" + mod.module;
+            fetch("/api/initiatives/" + mod.mission + "/" + mod.module + "/status")
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (d) {
+                if (d && d.status) {
+                  self.statusMapLocal[key] = d.status;
+                  if (window.Alpine && typeof Alpine.store === "function") {
+                    Alpine.store("workspace").statusMap[key] = d.status;
+                  }
+                }
+              })
+              .catch(function () {});
+          });
+        },
+
+        get groupedModules() {
+          var self = this;
+          return STATUS_ORDER.map(function (status) {
+            return {
+              status: status,
+              modules: self.modules.filter(function (m) {
+                var key = m.mission + "/" + m.module;
+                return (self.statusMapLocal[key] || "seed") === status;
+              }),
+            };
+          });
+        },
+
+        get stageSegments() {
+          var missionStage = this.mission ? (this.mission.stage || "seed") : "seed";
+          var activeIdx = STAGE_MAP[missionStage] || 0;
+          return LIFECYCLE_STAGES.map(function (label, i) {
+            var cls = i < activeIdx ? "done" : i === activeIdx ? "active" : "";
+            return { label: label, cls: cls };
+          });
+        },
+      };
+    });
+  });
+})();
+</script>
+</body>
+</html>

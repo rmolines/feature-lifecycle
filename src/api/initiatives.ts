@@ -7,7 +7,8 @@ import {
   resolveInitiativePath,
 } from "../parser.js";
 import { deriveStatus } from "../tools/status.js";
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, statSync } from "fs";
+import { readFile } from "fs/promises";
 import { join } from "path";
 
 const JSON_HEADERS = {
@@ -28,32 +29,150 @@ function errorResponse(message: string, status: number): Response {
 
 interface DocumentEntry {
   path: string;
-  project: string;
-  initiative: string;
+  mission: string;
+  module: string;
   type: string;
   data: Record<string, unknown>;
   valid: boolean;
   errors?: string[];
 }
 
+/**
+ * Count tasks by status in results.md content.
+ * Parses key-value blocks matching: status: success|partial|failed
+ */
+function parseResultsSummary(content: string): string {
+  const statusLines = content.match(/^status:\s*\S+/gm) ?? [];
+  const total = statusLines.length;
+  const success = statusLines.filter((l) => /^status:\s*success$/.test(l)).length;
+  const partial = statusLines.filter((l) => /^status:\s*partial$/.test(l)).length;
+  const failed = statusLines.filter((l) => /^status:\s*failed$/.test(l)).length;
+  return `${success} success, ${partial} partial, ${failed} failed of ${total} tasks`;
+}
+
+/**
+ * Extract decision: field from review.md content (first matching line).
+ */
+function parseReviewDecision(content: string): string | null {
+  const match = content.match(/^decision:\s*(.+)$/m);
+  return match ? match[1].trim() : null;
+}
+
+/**
+ * Enrich a document entry's module directory with extra fields.
+ */
+async function enrichModuleData(initDir: string): Promise<{
+  results_summary: string | null;
+  review_decision: string | null;
+  cycle_count: number;
+  problem: string | null;
+}> {
+  let results_summary: string | null = null;
+  let review_decision: string | null = null;
+  let cycle_count = 0;
+  let problem: string | null = null;
+
+  // results_summary
+  const resultsPath = join(initDir, "results.md");
+  if (existsSync(resultsPath)) {
+    try {
+      const content = await readFile(resultsPath, "utf-8");
+      results_summary = parseResultsSummary(content);
+    } catch {
+      // best-effort
+    }
+  }
+
+  // review_decision — from frontmatter in review.md
+  const reviewPath = join(initDir, "review.md");
+  if (existsSync(reviewPath)) {
+    try {
+      const content = await readFile(reviewPath, "utf-8");
+      review_decision = parseReviewDecision(content);
+    } catch {
+      // best-effort
+    }
+  }
+
+  // cycle_count
+  const cyclesDir = join(initDir, "cycles");
+  if (existsSync(cyclesDir) && statSync(cyclesDir).isDirectory()) {
+    try {
+      cycle_count = readdirSync(cyclesDir).length;
+    } catch {
+      // best-effort
+    }
+  }
+
+  // problem — first sentence from ## Problem in prd.md > draft.md
+  const primaryDoc = existsSync(join(initDir, "prd.md"))
+    ? join(initDir, "prd.md")
+    : existsSync(join(initDir, "draft.md"))
+    ? join(initDir, "draft.md")
+    : null;
+
+  if (primaryDoc) {
+    try {
+      const content = await readFile(primaryDoc, "utf-8");
+      const lines = content.split("\n");
+      let inProblem = false;
+      for (const line of lines) {
+        if (/^## Problem/.test(line)) {
+          inProblem = true;
+          continue;
+        }
+        if (inProblem && /^## /.test(line)) break;
+        if (inProblem && line.trim() !== "") {
+          problem = line.trim();
+          break;
+        }
+      }
+    } catch {
+      // best-effort
+    }
+  }
+
+  return { results_summary, review_decision, cycle_count, problem };
+}
+
 async function collectDocuments(opts: {
   type?: string;
-  project?: string;
-}): Promise<DocumentEntry[]> {
+  mission?: string;
+}): Promise<(DocumentEntry & {
+  results_summary: string | null;
+  review_decision: string | null;
+  cycle_count: number;
+  problem: string | null;
+})[]> {
   const root = getInitiativesRoot();
-  const projects = opts.project ? [opts.project] : listProjects();
+  const missions = opts.mission ? [opts.mission] : listProjects();
   const targetTypes = opts.type ? [opts.type] : DOCUMENT_TYPES;
 
-  const entries: DocumentEntry[] = [];
+  type EnrichedEntry = DocumentEntry & {
+    results_summary: string | null;
+    review_decision: string | null;
+    cycle_count: number;
+    problem: string | null;
+  };
 
-  for (const project of projects) {
-    const initiatives = listInitiatives(project);
+  const entries: EnrichedEntry[] = [];
+  // Cache enrichment per module dir to avoid re-reading files
+  const enrichmentCache = new Map<string, Awaited<ReturnType<typeof enrichModuleData>>>();
 
-    for (const initiative of initiatives) {
-      const initDir = join(root, project, initiative);
+  for (const mission of missions) {
+    const modules = listInitiatives(mission);
+
+    for (const module of modules) {
+      const initDir = join(root, mission, module);
       if (!existsSync(initDir)) continue;
 
       const files = readdirSync(initDir).filter((f) => targetTypes.includes(f));
+
+      // Compute enrichment once per module
+      if (!enrichmentCache.has(initDir)) {
+        enrichmentCache.set(initDir, await enrichModuleData(initDir));
+      }
+      const enrichment = enrichmentCache.get(initDir)!;
 
       for (const file of files) {
         const filePath = join(initDir, file);
@@ -75,22 +194,24 @@ async function collectDocuments(opts: {
 
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: parsed.data,
             valid,
             errors,
+            ...enrichment,
           });
         } catch (err) {
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: {},
             valid: false,
             errors: [String(err)],
+            ...enrichment,
           });
         }
       }
@@ -102,13 +223,13 @@ async function collectDocuments(opts: {
 
 export async function handleList(params: {
   type?: string;
-  project?: string;
+  mission?: string;
 }): Promise<Response> {
   try {
     const documents = await collectDocuments(params);
     return jsonResponse({
       count: documents.length,
-      filters: { type: params.type ?? null, project: params.project ?? null },
+      filters: { type: params.type ?? null, mission: params.mission ?? null },
       documents,
     });
   } catch (err) {
@@ -117,32 +238,32 @@ export async function handleList(params: {
 }
 
 export async function handleGetStatus(
-  project: string,
+  mission: string,
   slug: string
 ): Promise<Response> {
   try {
-    const { status, artifacts } = await deriveStatus(project, slug);
-    return jsonResponse({ project, slug, status, artifacts });
+    const { status, artifacts } = await deriveStatus(mission, slug);
+    return jsonResponse({ mission, slug, status, artifacts });
   } catch (err) {
     return errorResponse(String(err), 500);
   }
 }
 
 export async function handleGetDocument(
-  project: string,
+  mission: string,
   slug: string,
   docType: string
 ): Promise<Response> {
   try {
-    const initDir = resolveInitiativePath(project, slug);
+    const initDir = resolveInitiativePath(mission, slug);
     if (!existsSync(initDir)) {
-      return errorResponse(`Initiative not found: ${project}/${slug}`, 404);
+      return errorResponse(`Initiative not found: ${mission}/${slug}`, 404);
     }
 
     const filePath = join(initDir, docType);
     if (!existsSync(filePath)) {
       return errorResponse(
-        `Document not found: ${project}/${slug}/${docType}`,
+        `Document not found: ${mission}/${slug}/${docType}`,
         404
       );
     }

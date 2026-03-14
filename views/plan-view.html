@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan View — Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/views/shared/tokens.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<script src="/views/shared/ws-client.js"></script>
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .pv-header {
+    flex-shrink: 0;
+    background: var(--color-panel);
+    border-bottom: 1px solid var(--color-border);
+    padding: 14px 24px;
+  }
+
+  .breadcrumb {
+    font-size: 10px; color: var(--color-text-secondary);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .breadcrumb a { color: var(--color-accent); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  .stat-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--font-size-sm); color: var(--color-text-secondary);
+  }
+  .stat-chip strong { color: var(--color-text-primary); font-weight: 600; }
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  .pv-body { flex: 1; overflow: hidden; display: flex; }
+
+  /* ── Sidebar (requirements) ──────────────────────────────────────────── */
+  .pv-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--color-panel);
+  }
+
+  .sidebar-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 10px;
+  }
+
+  .req-row {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--color-border-dim);
+  }
+  .req-row:last-child { border-bottom: none; }
+  .req-id {
+    font-size: var(--font-size-sm); font-weight: 700; color: #c084fc;
+    min-width: 36px; flex-shrink: 0;
+  }
+  .req-text { font-size: var(--font-size-sm); color: var(--color-text-primary); flex: 1; line-height: 1.5; }
+  .req-status { font-size: 9px; flex-shrink: 0; margin-top: 1px; }
+  .req-status.done     { color: var(--color-success); }
+  .req-status.partial  { color: var(--color-warning); }
+  .req-status.blocked  { color: var(--color-danger); }
+  .req-status.pending  { color: #475569; }
+
+  /* ── Main plan area ──────────────────────────────────────────────────── */
+  .pv-main { flex: 1; overflow-y: auto; padding: 20px; }
+
+  /* ── Batch section ───────────────────────────────────────────────────── */
+  .batch-section { margin-bottom: 28px; }
+  .batch-header {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 12px;
+  }
+  .batch-parallel-note { color: #334155; font-size: 9px; }
+
+  /* ── Task grid ───────────────────────────────────────────────────────── */
+  .task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  /* ── Task card ───────────────────────────────────────────────────────── */
+  .task-card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: transform 0.1s ease;
+  }
+  .task-card:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .task-card.result-success { border-left: 3px solid #22c55e; }
+  .task-card.result-partial  { border-left: 3px solid #eab308; }
+  .task-card.result-failed   { border-left: 3px solid #ef4444; }
+  .task-card.result-skipped  { border-left: 3px solid #475569; }
+
+  /* ── Dependency connector ────────────────────────────────────────────── */
+  .dep-flow {
+    display: flex; align-items: center; justify-content: center;
+    color: #1e2235; font-size: 18px; padding: 2px 0;
+    pointer-events: none;
+  }
+
+  /* ── Badges ──────────────────────────────────────────────────────────── */
+  .exec-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+  .exec-sonnet { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid #1d4ed8; }
+  .exec-haiku  { background: rgba(34,197,94,0.15);  color: #86efac; border: 1px solid #15803d; }
+  .exec-opus   { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid #5b21b6; }
+  .exec-default { background: rgba(71,85,105,0.15); color: #94a3b8; border: 1px solid #334155; }
+
+  .iso-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+  .iso-worktree { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid #b45309; }
+  .iso-none     { background: rgba(71,85,105,0.15);  color: #94a3b8; border: 1px solid #334155; }
+
+  .res-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+  .res-success { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid #16a34a; }
+  .res-partial  { background: rgba(234,179,8,0.2);  color: #fde047; border: 1px solid #ca8a04; }
+  .res-failed   { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid #dc2626; }
+  .res-skipped  { background: rgba(71,85,105,0.2);  color: #94a3b8; border: 1px solid #475569; }
+
+  .dep-ref { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid #3730a3; margin-right: 3px; }
+  .req-ref  { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(139,92,246,0.1); color: #c4b5fd; border: 1px solid #5b21b6; margin-right: 3px; }
+  .file-ref { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 9px; background: rgba(30,34,53,0.8); color: #64748b; border: 1px solid var(--color-border); margin-right: 3px; margin-bottom: 2px; }
+
+  /* ── Acceptance criteria ─────────────────────────────────────────────── */
+  .acceptance-content { display: none; margin-top: 4px; }
+  .acceptance-content.open { display: block; }
+  .toggle-btn svg { transition: transform 0.2s; }
+  .toggle-btn.open svg { transform: rotate(180deg); }
+
+  /* ── Results overlay strip ───────────────────────────────────────────── */
+  .results-strip {
+    display: flex; gap: 6px; align-items: center;
+    padding: 6px 12px; background: rgba(15,17,23,0.9);
+    border-bottom: 1px solid var(--color-border); font-size: 11px;
+    color: var(--color-text-secondary); flex-shrink: 0;
+  }
+
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm);
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .empty-state {
+    color: #3a4560; font-size: 11px; text-align: center;
+    padding: 60px 20px; border: 1px dashed #252a3a; border-radius: var(--radius-md);
+  }
+</style>
+</head>
+<body>
+<div x-data="planView()" x-init="init()" style="display:flex; flex-direction:column; height:100%; overflow:hidden;">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="pv-header">
+    <div class="breadcrumb">
+      <a href="/cockpit">cockpit</a>
+      <span>›</span>
+      <a :href="'/mission-view?m=' + missionAlias" x-text="missionAlias || '…'"></a>
+      <span>›</span>
+      <span x-text="moduleSlug || '…'"></span>
+      <span>›</span>
+      <span style="color:#475569;">plan</span>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+      <div>
+        <h1 style="font-size:16px; font-weight:600; color:#e2e8f0; margin:0;"
+            x-text="missionAlias && moduleSlug ? missionAlias + ' / ' + moduleSlug : 'Plan'"></h1>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex; gap:20px;" x-show="!loading && planData">
+        <div class="stat-chip">
+          <span>tasks</span>
+          <strong x-text="planData ? (planData.tasks ? planData.tasks.length : 0) : 0"></strong>
+        </div>
+        <div class="stat-chip">
+          <span>batches</span>
+          <strong x-text="batchCount"></strong>
+        </div>
+        <template x-if="planData && planData.requirements && planData.requirements.length > 0">
+          <div class="stat-chip">
+            <span>reqs</span>
+            <strong x-text="planData.requirements.length"></strong>
+          </div>
+        </template>
+        <template x-if="planData && planData.results && planData.results.length > 0">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:10px; color:#4ade80; font-weight:600;" x-text="planData.results.filter(r => r.status==='success').length + ' ok'"></span>
+            <template x-if="planData.results.filter(r => r.status==='partial').length > 0">
+              <span style="font-size:10px; color:#fde047; font-weight:600;" x-text="planData.results.filter(r => r.status==='partial').length + ' partial'"></span>
+            </template>
+            <template x-if="planData.results.filter(r => r.status==='failed').length > 0">
+              <span style="font-size:10px; color:#f87171; font-weight:600;" x-text="planData.results.filter(r => r.status==='failed').length + ' failed'"></span>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Body ────────────────────────────────────────────────────────────── -->
+  <div class="pv-body">
+
+    <!-- ── Sidebar: Requirements ────────────────────────────────────────── -->
+    <aside class="pv-sidebar" x-show="planData && planData.requirements && planData.requirements.length > 0">
+      <div class="sidebar-label">Requirements</div>
+      <template x-for="req in (planData ? planData.requirements : [])" :key="req.id">
+        <div class="req-row">
+          <span class="req-id" x-text="req.id"></span>
+          <span class="req-text" x-text="req.text"></span>
+          <!-- Coverage status -->
+          <span class="req-status" :class="reqCoverageClass(req.id)" x-text="reqCoverageLabel(req.id)"></span>
+        </div>
+      </template>
+    </aside>
+
+    <!-- ── Main: Task DAG ───────────────────────────────────────────────── -->
+    <main class="pv-main">
+
+      <!-- Loading -->
+      <div x-show="loading">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px;">
+          <template x-for="i in 6" :key="i">
+            <div class="panel" style="padding:14px; border-left:3px solid #1e2235;">
+              <div class="skeleton" style="height:12px; width:40%; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:11px; width:70%; margin-bottom:10px;"></div>
+              <div style="display:flex; gap:4px;">
+                <div class="skeleton" style="height:18px; width:60px;"></div>
+                <div class="skeleton" style="height:18px; width:50px;"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div x-show="!loading && error" class="empty-state">
+        <div style="color:#ef4444; margin-bottom:4px;" x-text="error"></div>
+      </div>
+
+      <!-- No data -->
+      <div x-show="!loading && !error && !planData" class="empty-state">
+        no plan found for this module
+      </div>
+
+      <!-- Plan content -->
+      <div x-show="!loading && !error && planData">
+        <template x-for="batch in batches" :key="batch.num">
+          <div class="batch-section">
+            <!-- Batch header -->
+            <div class="batch-header">
+              <span x-text="batch.num === 0 ? 'Batch —' : 'Batch ' + batch.num"></span>
+              <template x-if="batch.tasks.length > 1">
+                <span class="batch-parallel-note" x-text="'↔ ' + batch.tasks.length + ' tasks run in parallel'"></span>
+              </template>
+            </div>
+
+            <!-- Task cards -->
+            <div class="task-grid">
+              <template x-for="task in batch.tasks" :key="task.task">
+                <div class="task-card" :class="taskCardClass(task.task)">
+                  <!-- Task ID + result badge -->
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:11px; font-weight:700; color:#64748b;" x-text="task.task"></span>
+                    <template x-if="getResult(task.task)">
+                      <span class="res-badge" :class="'res-' + getResult(task.task).status"
+                            x-text="getResult(task.task).status"></span>
+                    </template>
+                  </div>
+
+                  <!-- Title -->
+                  <div style="font-size:12px; font-weight:500; color:#e2e8f0; line-height:1.4;" x-text="task.title || task.task"></div>
+
+                  <!-- Executor + isolation + batch -->
+                  <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                    <template x-if="task.executor">
+                      <span class="exec-badge" :class="execBadgeClass(task.executor)" x-text="task.executor"></span>
+                    </template>
+                    <template x-if="task.isolation">
+                      <span class="iso-badge" :class="task.isolation === 'worktree' ? 'iso-worktree' : 'iso-none'" x-text="task.isolation"></span>
+                    </template>
+                  </div>
+
+                  <!-- Dependencies -->
+                  <template x-if="task.depends_on">
+                    <div style="display:flex; gap:3px; flex-wrap:wrap; align-items:center;">
+                      <span style="font-size:9px; color:#475569; margin-right:2px;">depends on:</span>
+                      <template x-for="dep in splitComma(task.depends_on)" :key="dep">
+                        <span class="dep-ref" x-text="dep"></span>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Requirements refs -->
+                  <template x-if="task.requirements">
+                    <div style="display:flex; gap:3px; flex-wrap:wrap; align-items:center;">
+                      <span style="font-size:9px; color:#475569; margin-right:2px;">requirements:</span>
+                      <template x-for="req in splitComma(task.requirements)" :key="req">
+                        <span class="req-ref" x-text="req"></span>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Files -->
+                  <template x-if="task.files">
+                    <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:2px;">
+                      <template x-for="f in splitComma(task.files)" :key="f">
+                        <span class="file-ref" x-text="f"></span>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Result summary -->
+                  <template x-if="getResult(task.task) && getResult(task.task).summary">
+                    <div style="font-size:10px; color:#94a3b8; border-top:1px solid var(--color-border); padding-top:6px; line-height:1.5;"
+                         x-text="getResult(task.task).summary"></div>
+                  </template>
+
+                  <!-- Result files changed -->
+                  <template x-if="getResult(task.task) && getResult(task.task).files_changed">
+                    <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:2px;">
+                      <span style="font-size:9px; color:#475569;">changed:</span>
+                      <template x-for="f in splitComma(getResult(task.task).files_changed)" :key="f">
+                        <span class="file-ref" style="color:#86efac;" x-text="f"></span>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Result errors -->
+                  <template x-if="getResult(task.task) && getResult(task.task).errors">
+                    <div style="font-size:10px; color:#f87171; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.2); border-radius:4px; padding:6px; line-height:1.4;"
+                         x-text="getResult(task.task).errors"></div>
+                  </template>
+
+                  <!-- Result validation -->
+                  <template x-if="getResult(task.task) && getResult(task.task).validation_result">
+                    <div style="font-size:9px; color:#64748b; background:rgba(10,13,22,0.8); border:1px solid var(--color-border); border-radius:4px; padding:6px; white-space:pre-wrap;"
+                         x-text="getResult(task.task).validation_result"></div>
+                  </template>
+
+                  <!-- Acceptance criteria (collapsible) -->
+                  <template x-if="task.acceptance">
+                    <div style="border-top:1px solid var(--color-border); padding-top:6px;">
+                      <button class="toggle-btn" :class="{open: accOpen[task.task]}"
+                        @click="accOpen[task.task] = !accOpen[task.task]"
+                        style="display:flex; align-items:center; gap:4px; font-size:10px; color:#475569; background:none; border:none; cursor:pointer; padding:0; font-family:var(--font-mono);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        acceptance criteria
+                      </button>
+                      <div class="acceptance-content" :class="{open: accOpen[task.task]}"
+                           style="font-size:10px; color:#64748b; background:rgba(10,13,22,0.8); border-radius:4px; padding:8px; margin-top:4px; white-space:pre-wrap;"
+                           x-text="task.acceptance"></div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+
+            <!-- Arrow to next batch (if not last) -->
+            <template x-if="batch.num !== lastBatchNum">
+              <div class="dep-flow">↓</div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  document.addEventListener("alpine:init", function () {
+    Alpine.data("planView", function () {
+      return {
+        loading: true,
+        error: null,
+        missionAlias: "",
+        moduleSlug: "",
+        planData: null,
+        accOpen: {},
+
+        init: function () {
+          var params = new URLSearchParams(location.search);
+          this.missionAlias = params.get("m") || "";
+          this.moduleSlug = params.get("mod") || "";
+          if (!this.missionAlias || !this.moduleSlug) {
+            this.error = "Missing URL parameters. Use ?m=<mission>&mod=<module>";
+            this.loading = false;
+            return;
+          }
+          this.fetchPlan();
+        },
+
+        fetchPlan: function () {
+          var self = this;
+          self.loading = true;
+          self.error = null;
+          fetch("/api/plans/" + encodeURIComponent(self.missionAlias) + "/" + encodeURIComponent(self.moduleSlug))
+            .then(function (r) {
+              if (!r.ok) throw new Error("HTTP " + r.status + " — no plan found");
+              return r.json();
+            })
+            .then(function (d) {
+              self.planData = d;
+              self.loading = false;
+            })
+            .catch(function (err) {
+              self.error = String(err);
+              self.loading = false;
+            });
+        },
+
+        get batches() {
+          if (!this.planData || !this.planData.tasks) return [];
+          var batchMap = {};
+          this.planData.tasks.forEach(function (t) {
+            var b = t.batch !== undefined ? t.batch : 0;
+            if (!batchMap[b]) batchMap[b] = [];
+            batchMap[b].push(t);
+          });
+          return Object.keys(batchMap).map(Number).sort(function (a, b) { return a - b; })
+            .map(function (num) { return { num: num, tasks: batchMap[num] }; });
+        },
+
+        get batchCount() { return this.batches.length; },
+
+        get lastBatchNum() {
+          var bs = this.batches;
+          return bs.length ? bs[bs.length - 1].num : -1;
+        },
+
+        getResult: function (taskId) {
+          if (!this.planData || !this.planData.results) return null;
+          return this.planData.results.find(function (r) { return r.task === taskId; }) || null;
+        },
+
+        taskCardClass: function (taskId) {
+          var r = this.getResult(taskId);
+          if (!r) return "";
+          return "result-" + (r.status || "");
+        },
+
+        execBadgeClass: function (executor) {
+          if (!executor) return "exec-default";
+          var e = executor.toLowerCase();
+          if (e.includes("sonnet")) return "exec-sonnet";
+          if (e.includes("haiku")) return "exec-haiku";
+          if (e.includes("opus")) return "exec-opus";
+          return "exec-default";
+        },
+
+        splitComma: function (str) {
+          if (!str) return [];
+          return str.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+        },
+
+        // Requirement coverage based on results
+        reqCoverageClass: function (reqId) {
+          var self = this;
+          if (!self.planData || !self.planData.tasks) return "pending";
+          var coveringTasks = (self.planData.tasks || []).filter(function (t) {
+            return t.requirements && self.splitComma(t.requirements).indexOf(reqId) !== -1;
+          });
+          if (coveringTasks.length === 0) return "pending";
+          if (!self.planData.results || !self.planData.results.length) return "pending";
+          var statuses = coveringTasks.map(function (t) {
+            var r = self.getResult(t.task);
+            return r ? r.status : null;
+          });
+          if (statuses.every(function (s) { return s === "success"; })) return "done";
+          if (statuses.some(function (s) { return s === "failed"; })) return "blocked";
+          if (statuses.some(function (s) { return s === "success" || s === "partial"; })) return "partial";
+          return "pending";
+        },
+
+        reqCoverageLabel: function (reqId) {
+          var cls = this.reqCoverageClass(reqId);
+          var labels = { done: "✓", partial: "~", blocked: "✗", pending: "·" };
+          return labels[cls] || "·";
+        },
+      };
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

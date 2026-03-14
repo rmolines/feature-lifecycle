@@ -2,54 +2,23 @@
 
 ## Pitfalls
 
-### Template placeholder strings must not appear in content
-Scripts that inject JSON into HTML templates via Python `str.replace()` will break
-silently if the placeholder string appears inside the JSON content itself. The result
-is malformed JSON, a blank browser page, and exit 0 with no error.
-
-| Script | Placeholder | Content surface |
-|---|---|---|
-| `scripts/plan-view.sh` | `__PLAN_DATA__` | Plan task fields (title, acceptance criteria, files) |
-| `scripts/cockpit.sh` | `__COCKPIT_DATA__` | Discovery artifact fields (frontmatter, problem text, plan names, results, review decisions) |
-
-Never use these literal strings in any artifact content, test fixtures, or generated values.
+### MCP and HTTP are separate processes
+The MCP server (`src/index.ts`) handles CRUD tools over stdio. The HTTP server
+(`src/serve.ts` → `src/server.ts`) serves views on port 3333 with WebSocket
+auto-refresh. They are independent — MCP must never import or start the HTTP server.
+Skills that open views call `bash ~/git/launchpad/scripts/ensure-server.sh` first
+to guarantee the HTTP server is running. No bash scripts generate HTML.
 
 ### `status:` frontmatter is stale — derive status from the filesystem
 As of domain-model-v2, discovery status is derived from filesystem artifacts by
-`scripts/derive-status.sh`, not from the `status:` field in `draft.md` or `prd.md`
-frontmatter. Reading `status:` directly will return stale or incorrect data.
+`scripts/derive-status.sh` (bash) or `src/tools/status.ts` (TypeScript), not from the
+`status:` field in `draft.md` or `prd.md` frontmatter. Reading `status:` directly will
+return stale or incorrect data.
 
 - Use `derive_status <discovery_dir>` (source `scripts/derive-status.sh` first).
-- `cockpit.sh` already sources it. Any new script that needs status must do the same.
+- Or use the API: `GET /api/initiatives/:mission/:module/status`.
 - `ship.md` archives by moving the directory to `archived/`; it no longer patches
   `status: archived` into frontmatter. Do not rely on frontmatter to detect archived state.
-
-### `~/git/cockpit.md` is auto-generated — do not edit it directly
-`cockpit.sh --refresh` overwrites `~/git/cockpit.md` entirely via `generate_cockpit_md()`.
-Any manual edits to that file are silently lost on the next refresh.
-
-To add manual content to the cockpit use `~/.claude/cockpit-manual.yaml`:
-- `needs-attention` — list of `{project, action, type, context}` dicts rendered as a table
-- `limbo` — list of project ids excluded from the main listing
-
-### `cockpit-manual.yaml` awk fallback silently drops dict items in `needs-attention`
-When PyYAML is unavailable, `cockpit.sh` falls back to an awk parser that only handles
-flat string list items (`- some text`). The intended `needs-attention` schema uses dicts:
-
-```yaml
-needs-attention:
-  - project: foo
-    action: Do something
-    type: external
-    context: path/to/doc.md
-```
-
-The awk fallback reads only the first line of each dict entry (`project: foo`) and
-discards the remaining keys. The python renderer then calls `item.get('project', '')` on
-a plain string, producing an empty table row. Exit code is 0, no error is printed.
-
-Fix: ensure PyYAML is installed (`pip install pyyaml`) so the primary parser runs.
-Never use flat string items for `needs-attention` — always use the dict schema above.
 
 ### `session_analyzer.py` — `usage` field excludes subagent tokens; `cost` field includes them
 `parse_transcript()` returns a dict where `usage` contains only the main session's token
@@ -104,27 +73,11 @@ All logging in this codebase uses `process.stderr.write(...)` directly. Never ad
 `console.log` calls anywhere under `src/`. For debug output, always use
 `process.stderr.write("[tag] message\n")`.
 
-### HTTP API uses `project`/`initiative` — MCP tools use `mission`/`module`
-The HTTP API (`src/api/initiatives.ts`) and MCP tools (`src/tools/`) use different
-names for the same filesystem concepts:
+### Requirements format must be exact — `- **R<N>:** <text>`
+The plan-view parser (both legacy bash and `src/api/plans.ts`) only recognises
+requirement lines matching exactly `- **R<N>:** <text>`. Any deviation — missing
+bold markers (`- R1: text`), bold without trailing colon (`- **R1** text`), or
+leading whitespace — causes the parser to return empty. The requirements panel
+disappears silently.
 
-| Concept | HTTP API field | MCP tool parameter |
-|---|---|---|
-| Top-level directory under `~/.claude/initiatives/` | `project` | `mission` |
-| Subdirectory (feature slug) | `initiative` / `slug` | `module` |
-
-Both layers resolve to the same path: `~/.claude/initiatives/<project>/<slug>/`.
-An agent reading MCP tool schemas and then constructing HTTP API calls (or vice versa)
-will use the wrong field names and get 404s or empty results with no schema error.
-
-### `parse_requirements` in plan-view.sh silently drops requirements on format mismatch
-The awk parser in `scripts/plan-view.sh` only recognises requirement lines matching
-exactly `- **R<N>:** <text>`. Any deviation — missing bold markers (`- R1: text`),
-bold without trailing colon (`- **R1** text`), or leading whitespace — causes
-`parse_requirements` to return empty. The requirements panel in the HTML disappears
-silently. The script exits 0. The DAG `requirements:` field still references R-IDs
-but nothing links.
-
-Most likely to happen when an agent generates `## Requirements` in plan.md from
-scratch instead of copying verbatim from the PRD. Always use the exact format from
-`templates/plan-template.md` and `templates/prd-template.md`.
+Always use the exact format from `templates/plan-template.md` and `templates/prd-template.md`.

@@ -30,7 +30,7 @@ level (will this feature work?). Vision reduces risk at the product level:
 - Can we sustain this? (business model risk)
 
 The output is a `mission.md` — a declarative roadmap that the human consumes visually
-(via mission-view.sh HTML visualization) to decide which stage to attack next. Each stage
+(via the mission-view at http://localhost:3333/mission-view) to decide which stage to attack next. Each stage
 links to a `/discovery` entry.
 
 **Mission is not consumed by agents.** It's consumed by the human to make strategic
@@ -234,11 +234,11 @@ Create `mission.md` from template (`templates/mission-template.md`):
 - Fill **Strategy** with hypotheses
 - Leave risks tables for investigation
 
-After saving mission.md, generate the HTML visualization:
+After saving mission.md, open the mission view in the browser:
 ```bash
-bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
-This opens the mission in the browser for human review.
+Where `<mission-id>` is the mission slug (basename of the mission directory). This opens the mission in the browser for human review.
 
 Report state and suggest next cycle or `/clear`.
 
@@ -293,9 +293,9 @@ Update mission.md:
 - **Risks accepted**: move risks the human decided to accept
 - **YAML frontmatter**: update `updated: <today YYYY-MM-DD>`
 
-After updating mission.md, regenerate the HTML visualization:
+After updating mission.md, open the mission view in the browser:
 ```bash
-bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
 
 Report state: risks validated (N/M), pending risks, suggested next cycle.
@@ -352,9 +352,9 @@ If all 6 pass:
 - Consolidate language (remove hedging)
 - Ensure stages have correct entry commands
 
-Generate the final HTML visualization:
+Open the final mission view in the browser:
 ```bash
-bash ~/git/launchpad/scripts/mission-view.sh <path/to/mission.md>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
 
 ### Close

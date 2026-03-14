@@ -1,16 +1,23 @@
 (function () {
   "use strict";
 
-  // --- Status indicator ---
-  var indicator = document.createElement("div");
-  indicator.id = "_ws_indicator";
-  indicator.style.cssText =
-    "position:fixed;bottom:12px;right:12px;width:10px;height:10px;" +
-    "border-radius:50%;background:#ef4444;z-index:9999;transition:background 0.3s;";
-  document.body.appendChild(indicator);
+  // --- Status indicator (deferred until body exists) ---
+  var indicator = null;
+
+  function ensureIndicator() {
+    if (indicator) return;
+    if (!document.body) return;
+    indicator = document.createElement("div");
+    indicator.id = "_ws_indicator";
+    indicator.style.cssText =
+      "position:fixed;bottom:12px;right:12px;width:10px;height:10px;" +
+      "border-radius:50%;background:#ef4444;z-index:9999;transition:background 0.3s;";
+    document.body.appendChild(indicator);
+  }
 
   function setConnected(connected) {
-    indicator.style.background = connected ? "#22c55e" : "#ef4444";
+    ensureIndicator();
+    if (indicator) indicator.style.background = connected ? "#22c55e" : "#ef4444";
   }
 
   // --- Reconnect logic ---

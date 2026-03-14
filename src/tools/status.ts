@@ -78,10 +78,16 @@ export async function deriveStatus(
     try {
       const doc = await parseDocument(join(dir, "results.md"));
       const content = doc.content;
-      // Parse task lines: - [x] or - [ ]
-      const taskLines = content.match(/^- \[[ xX]\]/gm) ?? [];
-      const doneTasks = content.match(/^- \[[xX]\]/gm) ?? [];
-      if (taskLines.length > 0 && doneTasks.length === taskLines.length) {
+      // Parse key-value blocks written by /launchpad:delivery:
+      //   status: success | partial | failed
+      // Logic mirrors derive-status.sh: all tasks done when every `status:` line
+      // is either "success" or "partial" and at least one exists.
+      // Reference: scripts/derive-status.sh derive_status() results.md block.
+      const allStatusLines = content.match(/^status:\s*\S+/gm) ?? [];
+      const notDoneLines = allStatusLines.filter(
+        (line) => !/^status:\s*(success|partial)$/.test(line)
+      );
+      if (allStatusLines.length > 0 && notDoneLines.length === 0) {
         return { status: "done", artifacts };
       }
     } catch {
