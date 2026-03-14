@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module View — Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/views/shared/tokens.css">
+<script src="/views/shared/components.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+<script src="/views/shared/ws-client.js"></script>
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+
+  /* ── Header ──────────────────────────────────────────────────────────── */
+  .modv-header {
+    flex-shrink: 0;
+    background: var(--color-panel);
+    border-bottom: 1px solid var(--color-border);
+    padding: 16px 24px;
+  }
+
+  .breadcrumb {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .breadcrumb-link {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .breadcrumb-link:hover { text-decoration: underline; }
+
+  .breadcrumb-sep { color: var(--color-text-muted); }
+
+  .breadcrumb-current { color: var(--color-text-primary); }
+
+  /* ── Main content ────────────────────────────────────────────────────── */
+  .modv-main { flex: 1; overflow-y: auto; padding: 24px; }
+
+  .modv-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    max-width: 1100px;
+  }
+
+  @media (max-width: 768px) {
+    .modv-layout { grid-template-columns: 1fr; }
+  }
+
+  /* ── Doc section ─────────────────────────────────────────────────────── */
+  .doc-section {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .doc-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .doc-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary);
+  }
+
+  .doc-section-body {
+    padding: 14px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .modv-sidebar { }
+
+  .sidebar-card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-title {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Artifact list ───────────────────────────────────────────────────── */
+  .artifact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--color-border-dim);
+    font-size: var(--font-size-sm);
+  }
+
+  .artifact-item:last-child { border-bottom: none; }
+
+  .artifact-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .artifact-dot.present { background: var(--color-done); }
+  .artifact-dot.absent  { background: #2a3045; }
+
+  .artifact-name { flex: 1; }
+
+  .artifact-name.present { color: var(--color-text-primary); }
+  .artifact-name.absent  { color: #334155; }
+
+  .artifact-link {
+    font-size: var(--font-size-xs);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .artifact-link:hover { text-decoration: underline; }
+
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1a1d2e 25%, #222638 50%, #1a1d2e 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .empty-state {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    padding: 40px 20px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+</style>
+</head>
+<body>
+<div x-data="moduleView()" x-init="init()" style="display:flex; flex-direction:column; height:100%;">
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <header class="modv-header">
+    <div class="breadcrumb" x-html="breadcrumb"></div>
+
+    <!-- Loading skeleton -->
+    <div x-show="loading">
+      <div class="skeleton" style="height:18px; width:240px; margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:11px; width:180px;"></div>
+    </div>
+
+    <!-- Module header -->
+    <div x-show="!loading && !error">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <h1 style="font-size:18px; font-weight:600; color:var(--color-text-bright); margin:0;" x-text="moduleId"></h1>
+        <span class="status-dot" :class="'dot-' + status"></span>
+        <span class="badge" :class="'badge-' + status" x-text="status"></span>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div x-show="!loading && error" style="color:var(--color-danger); font-size:var(--font-size-sm);" x-text="error"></div>
+  </header>
+
+  <!-- ── Main ─────────────────────────────────────────────────────────────── -->
+  <main class="modv-main">
+
+    <!-- Loading skeleton -->
+    <div x-show="loading">
+      <div style="display:grid; grid-template-columns:1fr 280px; gap:20px;">
+        <div>
+          <div class="panel" style="padding:14px; margin-bottom:12px;">
+            <div class="skeleton" style="height:10px; width:30%; margin-bottom:12px;"></div>
+            <div class="skeleton" style="height:10px; width:100%; margin-bottom:6px;"></div>
+            <div class="skeleton" style="height:10px; width:90%; margin-bottom:6px;"></div>
+            <div class="skeleton" style="height:10px; width:75%;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="panel" style="padding:14px;">
+            <div class="skeleton" style="height:10px; width:50%; margin-bottom:12px;"></div>
+            <div class="skeleton" style="height:8px; width:100%; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:8px; width:100%; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:8px; width:100%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty / no content -->
+    <div x-show="!loading && !error && !hasContent" class="empty-state">
+      no content loaded for this module
+    </div>
+
+    <!-- Module layout -->
+    <div x-show="!loading && !error && hasContent" class="modv-layout">
+
+      <!-- Left: doc sections -->
+      <div class="modv-docs">
+        <template x-for="doc in loadedDocs" :key="doc.type">
+          <div class="doc-section">
+            <div class="doc-section-header">
+              <span class="doc-section-title" x-text="doc.type"></span>
+              <template x-if="doc.type === 'plan' && hasPlan">
+                <a :href="'/plan-view?m=' + missionId + '&s=' + stageId + '&mod=' + moduleId"
+                   style="font-size:var(--font-size-xs); color:var(--color-accent); text-decoration:none;">
+                  open plan view →
+                </a>
+              </template>
+            </div>
+            <div class="doc-section-body" x-text="doc.content"></div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Right: sidebar -->
+      <div class="modv-sidebar">
+
+        <!-- Status card -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">status</div>
+          <div class="status-row">
+            <span class="status-dot" :class="'dot-' + status"></span>
+            <span style="font-size:var(--font-size-sm); color:var(--color-text-primary);" x-text="status"></span>
+          </div>
+          <div style="font-size:var(--font-size-xs); color:var(--color-text-muted);">
+            <span x-text="missionId + ' / ' + stageId + ' / ' + moduleId"></span>
+          </div>
+        </div>
+
+        <!-- Artifacts card -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">artifacts</div>
+          <template x-for="artifact in artifacts" :key="artifact.type">
+            <div class="artifact-item">
+              <div class="artifact-dot" :class="artifact.present ? 'present' : 'absent'"></div>
+              <span class="artifact-name" :class="artifact.present ? 'present' : 'absent'" x-text="artifact.type"></span>
+              <template x-if="artifact.present">
+                <a class="artifact-link"
+                   @click.prevent="loadDoc(artifact.type)"
+                   href="#">view</a>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- Quick links card -->
+        <template x-if="hasPlan">
+          <div class="sidebar-card">
+            <div class="sidebar-title">quick links</div>
+            <a :href="'/plan-view?m=' + missionId + '&s=' + stageId + '&mod=' + moduleId"
+               style="font-size:var(--font-size-sm); color:var(--color-accent); text-decoration:none; display:block; padding:3px 0;">
+              plan view →
+            </a>
+          </div>
+        </template>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var ARTIFACT_TYPES = ["draft", "prd", "plan", "results", "review"];
+
+  document.addEventListener("alpine:init", function () {
+    Alpine.data("moduleView", function () {
+      return {
+        loading: true,
+        error: null,
+        missionId: "",
+        stageId: "",
+        moduleId: "",
+        status: "seed",
+        artifacts: [],
+        loadedDocs: [],
+        docCache: {},
+
+        init: function () {
+          var params = new URLSearchParams(location.search);
+          this.missionId = params.get("m") || "";
+          this.stageId = params.get("s") || "";
+          this.moduleId = params.get("mod") || "";
+          if (!this.missionId || !this.moduleId) {
+            this.error = "Missing ?m= or ?mod= parameters.";
+            this.loading = false;
+            return;
+          }
+          this.fetchData();
+        },
+
+        fetchData: function () {
+          var self = this;
+          self.loading = true;
+          self.error = null;
+
+          // Fetch status
+          var statusUrl = "/api/missions/" + encodeURIComponent(self.missionId) + "/" +
+            (self.stageId ? encodeURIComponent(self.stageId) + "/" : "") +
+            encodeURIComponent(self.moduleId) + "/status";
+
+          var statusP = fetch(statusUrl)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+              if (d && d.status) self.status = d.status;
+              // Build artifact presence from status response
+              var present = {};
+              if (d && d.artifacts) {
+                d.artifacts.forEach(function (a) { present[a] = true; });
+              }
+              self.artifacts = ARTIFACT_TYPES.map(function (t) {
+                return { type: t, present: !!present[t] };
+              });
+            })
+            .catch(function () {});
+
+          // Load draft doc by default
+          var draftUrl = "/api/missions/" + encodeURIComponent(self.missionId) + "/" +
+            (self.stageId ? encodeURIComponent(self.stageId) + "/" : "") +
+            encodeURIComponent(self.moduleId) + "/draft";
+
+          var draftP = fetch(draftUrl)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+              if (d && d.content) {
+                self.docCache["draft"] = d.content;
+                self.loadedDocs = [{ type: "draft", content: d.content }];
+              }
+            })
+            .catch(function () {});
+
+          Promise.all([statusP, draftP])
+            .then(function () { self.loading = false; })
+            .catch(function (err) { self.error = String(err); self.loading = false; });
+        },
+
+        loadDoc: function (type) {
+          var self = this;
+
+          // If already loaded, just bring to top
+          var existing = self.loadedDocs.find(function (d) { return d.type === type; });
+          if (existing) {
+            // scroll to it or just highlight — for now do nothing
+            return;
+          }
+
+          // Check cache
+          if (self.docCache[type]) {
+            self.loadedDocs.push({ type: type, content: self.docCache[type] });
+            return;
+          }
+
+          var url = "/api/missions/" + encodeURIComponent(self.missionId) + "/" +
+            (self.stageId ? encodeURIComponent(self.stageId) + "/" : "") +
+            encodeURIComponent(self.moduleId) + "/" + encodeURIComponent(type);
+
+          fetch(url)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+              if (d && d.content) {
+                self.docCache[type] = d.content;
+                self.loadedDocs.push({ type: type, content: d.content });
+              }
+            })
+            .catch(function () {});
+        },
+
+        get hasPlan() {
+          return this.artifacts.some(function (a) { return a.type === "plan" && a.present; });
+        },
+
+        get hasContent() {
+          return this.loadedDocs.length > 0 || this.artifacts.some(function (a) { return a.present; });
+        },
+
+        get breadcrumb() {
+          var items = [
+            { label: "Launch Complex", href: "/cockpit" },
+            { label: this.missionId, href: "/mission-view?m=" + encodeURIComponent(this.missionId) },
+          ];
+          if (this.stageId) {
+            items.push({ label: this.stageId, href: "/stage-view?m=" + encodeURIComponent(this.missionId) + "&s=" + encodeURIComponent(this.stageId) });
+          }
+          items.push({ label: this.moduleId });
+          return renderBreadcrumb(items);
+        },
+      };
+    });
+  });
+})();
+</script>
+</body>
+</html>

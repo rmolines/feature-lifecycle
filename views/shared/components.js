@@ -243,10 +243,27 @@
     });
   });
 
+  // ── renderBreadcrumb ──────────────────────────────────────────────────────
+  // Generates breadcrumb HTML from an array of items.
+  // items = [{label, href?}, ...] — last item has no href (current page).
+  function renderBreadcrumb(items) {
+    return items.map(function (item, i) {
+      if (i < items.length - 1) {
+        return '<a href="' + (item.href || "#") + '" class="breadcrumb-link">' + item.label + '</a>' +
+               '<span class="breadcrumb-sep">›</span>';
+      }
+      return '<span class="breadcrumb-current">' + item.label + '</span>';
+    }).join("");
+  }
+
+  // Expose globally so Alpine templates can call renderBreadcrumb(...)
+  window.renderBreadcrumb = renderBreadcrumb;
+
   // Export helpers for external use (e.g. ws-client.js callback)
   window._launchpadComponents = {
     getStatusConfig: getStatusConfig,
     ARTIFACT_TYPES: ARTIFACT_TYPES,
+    renderBreadcrumb: renderBreadcrumb,
   };
 
 })();
