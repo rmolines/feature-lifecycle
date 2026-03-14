@@ -34,24 +34,24 @@ export function startHttpServer(port: number): ReturnType<typeof Bun.serve> {
         return new Response("WebSocket upgrade failed", { status: 400 });
       }
 
-      // API: GET /api/initiatives (with optional ?type=&project= params)
+      // API: GET /api/initiatives (with optional ?type=&mission= params)
       if (req.method === "GET" && pathname === "/api/initiatives") {
         const type = url.searchParams.get("type") ?? undefined;
-        const project = url.searchParams.get("project") ?? undefined;
-        return handleList({ type, project });
+        const mission = url.searchParams.get("mission") ?? undefined;
+        return handleList({ type, mission });
       }
 
-      // API: GET /api/initiatives/:project/:slug/status
-      // API: GET /api/initiatives/:project/:slug/:docType
+      // API: GET /api/initiatives/:mission/:slug/status
+      // API: GET /api/initiatives/:mission/:slug/:docType
       if (req.method === "GET" && pathname.startsWith("/api/initiatives/")) {
         const segments = pathname.slice("/api/initiatives/".length).split("/");
         if (segments.length === 3) {
-          const [project, slug, last] = segments;
+          const [mission, slug, last] = segments;
           if (last === "status") {
-            return handleGetStatus(project, slug);
+            return handleGetStatus(mission, slug);
           }
           // docType like "draft.md", "prd.md", etc.
-          return handleGetDocument(project, slug, last);
+          return handleGetDocument(mission, slug, last);
         }
         return new Response("Not Found", { status: 404 });
       }

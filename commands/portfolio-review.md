@@ -1,6 +1,6 @@
 ---
 description: "Portfolio review session — panorama, strategic map, conversation, execution, and review log. Surfaces overlaps, orphans, and decisions across all discoveries."
-argument-hint: "[project-alias] or --project <alias>"
+argument-hint: "[mission-alias] or --mission <alias>"
 ---
 
 # /launchpad:portfolio-review
@@ -13,7 +13,7 @@ overlaps — and then help them make and execute decisions.
 a log of why, and a cleaner portfolio. Resist the urge to just present information.
 Always move toward a decision.
 
-Input: $ARGUMENTS — optional project alias, or `--project <alias>`.
+Input: $ARGUMENTS — optional mission alias, or `--mission <alias>`.
 
 ---
 
@@ -22,15 +22,15 @@ Input: $ARGUMENTS — optional project alias, or `--project <alias>`.
 ### Parse arguments
 
 ```bash
-PROJECT_FILTER=""
-if echo "$ARGUMENTS" | grep -q "^--project "; then
-  PROJECT_FILTER=$(echo "$ARGUMENTS" | sed 's/^--project //')
+MISSION_FILTER=""
+if echo "$ARGUMENTS" | grep -q "^--mission "; then
+  MISSION_FILTER=$(echo "$ARGUMENTS" | sed 's/^--mission //')
 elif [ -n "$ARGUMENTS" ]; then
-  PROJECT_FILTER="$ARGUMENTS"
+  MISSION_FILTER="$ARGUMENTS"
 fi
 ```
 
-- If `PROJECT_FILTER` is set: scan only `~/.claude/initiatives/$PROJECT_FILTER/`
+- If `MISSION_FILTER` is set: scan only `~/.claude/initiatives/$MISSION_FILTER/`
 - If empty: scan all `~/.claude/initiatives/*/` (excluding `_reviews/`)
 
 ### Scan initiatives
@@ -41,15 +41,15 @@ Source the status helper:
 source ~/git/launchpad/scripts/derive-status.sh
 ```
 
-For each project directory under `~/.claude/initiatives/` (skip `_reviews`):
+For each mission directory under `~/.claude/initiatives/` (skip `_reviews`):
 
 ```bash
-for project_dir in ~/.claude/initiatives/*/; do
-  project=$(basename "$project_dir")
-  [ "$project" = "_reviews" ] && continue
-  [ -n "$PROJECT_FILTER" ] && [ "$project" != "$PROJECT_FILTER" ] && continue
+for mission_dir in ~/.claude/initiatives/*/; do
+  mission=$(basename "$mission_dir")
+  [ "$mission" = "_reviews" ] && continue
+  [ -n "$MISSION_FILTER" ] && [ "$mission" != "$MISSION_FILTER" ] && continue
 
-  for discovery_dir in "$project_dir"*/; do
+  for discovery_dir in "$mission_dir"*/; do
     [ -d "$discovery_dir" ] || continue
     feature=$(basename "$discovery_dir")
 
@@ -70,14 +70,14 @@ for project_dir in ~/.claude/initiatives/*/; do
       updated=$(frontmatter_field "$src_file" "updated")
     fi
 
-    echo "$project | $feature | $status | $updated | $problem"
+    echo "$mission | $feature | $status | $updated | $problem"
   done
 done
 ```
 
 ### Count and group
 
-For each project, compute counters:
+For each mission, compute counters:
 - **active**: status is seed, exploring, planned, ready, building, approved
 - **done**: status is done
 - **shipped**: status is shipped (in `archived/`)
@@ -85,12 +85,12 @@ For each project, compute counters:
 
 ### Present panorama
 
-Present a grouped table per project:
+Present a grouped table per mission:
 
 ```
 ## Portfolio Panorama
 
-### <project> — N active, N done, N seeds
+### <mission> — N active, N done, N seeds
 
 | Discovery | Status | Updated | Problem |
 |-----------|--------|---------|---------|
@@ -235,13 +235,13 @@ Execute each approved action sequentially. Report each result.
 
 ```bash
 # Move to archived/
-DISC_DIR="$HOME/.claude/initiatives/<project>/<slug>"
-ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
+DISC_DIR="$HOME/.claude/initiatives/<mission>/<slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<mission>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$DISC_DIR" "$ARCHIVED_DIR/<slug>"
 ```
 
-Report: `✓ <slug> archived at ~/.claude/initiatives/<project>/archived/<slug>/`
+Report: `✓ <slug> archived at ~/.claude/initiatives/<mission>/archived/<slug>/`
 
 ### consolidar
 
@@ -253,8 +253,8 @@ Survivor is the one to keep. Absorbed is the one to merge in and then archive.
 4. Archive the absorbed discovery:
 
 ```bash
-ABSORBED_DIR="$HOME/.claude/initiatives/<project>/<absorbed-slug>"
-ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
+ABSORBED_DIR="$HOME/.claude/initiatives/<mission>/<absorbed-slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<mission>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$ABSORBED_DIR" "$ARCHIVED_DIR/<absorbed-slug>"
 ```
@@ -266,7 +266,7 @@ Report: `✓ <absorbed-slug> merged into <survivor-slug> and archived`
 Do not execute filesystem changes. Instead, present next step:
 
 ```
-→ <slug> is ready for discovery. Run: /launchpad:discovery <project>/<slug>
+→ <slug> is ready for discovery. Run: /launchpad:discovery <mission>/<slug>
 ```
 
 ### pausar
@@ -280,11 +280,11 @@ Report: `✓ <slug> deprioritized (priority: low set in frontmatter)`
 1. For each new sub-slug, create a draft.md:
 
 ```bash
-mkdir -p "$HOME/.claude/initiatives/<project>/<new-slug>"
+mkdir -p "$HOME/.claude/initiatives/<mission>/<new-slug>"
 ```
 
 Write a draft.md from the template (read `~/git/launchpad/templates/prd-template.md`)
-with frontmatter including today's date, `project: <project>`, and the scoped Problem
+with frontmatter including today's date, `mission: <mission>`, and the scoped Problem
 derived from the original discovery's problem.
 
 2. In the original discovery's draft.md, add to frontmatter:
@@ -293,8 +293,8 @@ derived from the original discovery's problem.
 3. Archive the original:
 
 ```bash
-ORIGINAL_DIR="$HOME/.claude/initiatives/<project>/<original-slug>"
-ARCHIVED_DIR="$HOME/.claude/initiatives/<project>/archived"
+ORIGINAL_DIR="$HOME/.claude/initiatives/<mission>/<original-slug>"
+ARCHIVED_DIR="$HOME/.claude/initiatives/<mission>/archived"
 mkdir -p "$ARCHIVED_DIR"
 mv "$ORIGINAL_DIR" "$ARCHIVED_DIR/<original-slug>"
 ```
@@ -329,14 +329,14 @@ Write the log in this format:
 ```markdown
 ---
 date: <YYYY-MM-DD>
-scope: <project-alias or "all">
+scope: <mission-alias or "all">
 ---
 
 ## Snapshot (antes)
 
-| Project | Ativos | Done | Archived |
+| Mission | Ativos | Done | Archived |
 |---------|--------|------|----------|
-| <project> | N | N | N |
+| <mission> | N | N | N |
 
 ## Decisões
 
@@ -347,9 +347,9 @@ scope: <project-alias or "all">
 
 ## Snapshot (depois)
 
-| Project | Ativos | Done | Archived |
+| Mission | Ativos | Done | Archived |
 |---------|--------|------|----------|
-| <project> | N | N | N |
+| <mission> | N | N | N |
 
 ## Diff
 

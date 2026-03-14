@@ -33,7 +33,7 @@
         open: false,
 
         get status() {
-          var key = this.doc.project + "/" + this.doc.initiative;
+          var key = this.doc.mission + "/" + this.doc.module;
           return Alpine.store("workspace").statusMap[key] || "seed";
         },
         get cfg() { return getStatusConfig(this.status); },
@@ -57,7 +57,7 @@
 
         get title() {
           if (this.doc.data && this.doc.data.id) return this.doc.data.id;
-          return this.doc.initiative || this.doc.slug || "—";
+          return this.doc.module || this.doc.slug || "—";
         },
 
         get problem() {
@@ -87,13 +87,13 @@
     });
 
     // cockpitWorkspace — root data store for the cockpit page
-    // Groups raw documents by project/initiative and fetches derived status
+    // Groups raw documents by mission/module and fetches derived status
     Alpine.data("cockpitWorkspace", function () {
       return {
         loading: true,
         error: null,
         initiatives: [],       // grouped initiative objects
-        activeProject: "all",
+        activeMission: "all",
 
         init: function () {
           var self = this;
@@ -115,14 +115,14 @@
           var docs = store.rawDocuments || [];
           var grouped = {};
 
-          // Group documents by project/initiative
+          // Group documents by mission/module
           docs.forEach(function (doc) {
-            var key = doc.project + "/" + doc.initiative;
+            var key = doc.mission + "/" + doc.module;
             if (!grouped[key]) {
               grouped[key] = {
-                project: doc.project,
-                initiative: doc.initiative,
-                slug: doc.initiative,
+                mission: doc.mission,
+                module: doc.module,
+                slug: doc.module,
                 documents: {},
                 data: {},
                 status: "seed",
@@ -155,8 +155,8 @@
           // Fetch derived status for each initiative into store's reactive statusMap
           var wsStore = Alpine.store("workspace");
           initiatives.forEach(function (init) {
-            var key = init.project + "/" + init.initiative;
-            fetch("/api/initiatives/" + init.project + "/" + init.initiative + "/status")
+            var key = init.mission + "/" + init.module;
+            fetch("/api/initiatives/" + init.mission + "/" + init.module + "/status")
               .then(function (res) { return res.ok ? res.json() : null; })
               .then(function (data) {
                 if (data && data.status) {
@@ -167,23 +167,23 @@
           });
         },
 
-        get projects() {
+        get missions() {
           var seen = {};
-          var projects = [];
+          var missions = [];
           this.initiatives.forEach(function (init) {
-            if (init.project && !seen[init.project]) {
-              seen[init.project] = true;
-              projects.push(init.project);
+            if (init.mission && !seen[init.mission]) {
+              seen[init.mission] = true;
+              missions.push(init.mission);
             }
           });
-          return projects.sort();
+          return missions.sort();
         },
 
         get filteredInitiatives() {
           var self = this;
-          if (this.activeProject === "all") return this.initiatives;
+          if (this.activeMission === "all") return this.initiatives;
           return this.initiatives.filter(function (init) {
-            return init.project === self.activeProject;
+            return init.mission === self.activeMission;
           });
         },
 
@@ -191,7 +191,7 @@
           var counts = {};
           var map = Alpine.store("workspace").statusMap;
           this.initiatives.forEach(function (init) {
-            var key = init.project + "/" + init.initiative;
+            var key = init.mission + "/" + init.module;
             var s = map[key] || "seed";
             counts[s] = (counts[s] || 0) + 1;
           });
@@ -202,8 +202,8 @@
           return this.initiatives.length;
         },
 
-        setProject: function (project) {
-          this.activeProject = project;
+        setMission: function (mission) {
+          this.activeMission = mission;
         },
 
         statusDotClass: function (status) {

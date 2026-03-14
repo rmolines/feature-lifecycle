@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cockpit.sh — Scan ~/.claude/discoveries/, build unified JSON, inject into HTML template
+# cockpit.sh — Scan ~/.claude/initiatives/, build unified JSON, inject into HTML template
 # Usage:
 #   bash scripts/cockpit.sh                          # scan all, open browser
 #   bash scripts/cockpit.sh --mission <alias>        # filter by mission
@@ -8,17 +8,17 @@
 
 set -euo pipefail
 
-FILTER_PROJECT=""
+FILTER_MISSION=""
 JSON_ONLY=0
 REFRESH=0
-DISCOVERIES_DIR="${HOME}/.claude/discoveries"
+INITIATIVES_DIR="${HOME}/.claude/initiatives"
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mission|--project)
-      FILTER_PROJECT="$2"
+      FILTER_MISSION="$2"
       shift 2
       ;;
     --json-only)
@@ -259,12 +259,12 @@ PLANS_JSON=""
 first_module=1
 first_plan=1
 
-for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
+for feature_dir in "$INITIATIVES_DIR"/*/*/; do
   [[ -d "$feature_dir" ]] || continue
 
   parent_dir="${feature_dir%/}"
   feature=$(basename "$parent_dir")
-  project=$(basename "$(dirname "$parent_dir")")
+  mission=$(basename "$(dirname "$parent_dir")")
 
   # Determine primary frontmatter source
   fm_file=""
@@ -276,21 +276,21 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
 
   if [[ -n "$fm_file" ]]; then
     fm_id=$(frontmatter_field "$fm_file" "id")
-    fm_project=$(frontmatter_field "$fm_file" "project")
+    fm_mission=$(frontmatter_field "$fm_file" "mission")
     fm_created=$(frontmatter_field "$fm_file" "created")
     fm_updated=$(frontmatter_field "$fm_file" "updated")
     fm_tags_raw=$(frontmatter_field "$fm_file" "tags")
   else
-    fm_id=""; fm_project=""; fm_created=""; fm_updated=""; fm_tags_raw=""
+    fm_id=""; fm_mission=""; fm_created=""; fm_updated=""; fm_tags_raw=""
   fi
 
   [[ -z "$fm_id" ]]      && fm_id="$feature"
-  [[ -z "$fm_project" ]] && fm_project="$project"
+  [[ -z "$fm_mission" ]] && fm_mission="$mission"
 
-  eff_project="$fm_project"
+  eff_mission="$fm_mission"
 
-  # Apply project filter using authoritative frontmatter value
-  if [[ -n "$FILTER_PROJECT" && "$eff_project" != "$FILTER_PROJECT" ]]; then
+  # Apply mission filter using authoritative frontmatter value
+  if [[ -n "$FILTER_MISSION" && "$eff_mission" != "$FILTER_MISSION" ]]; then
     continue
   fi
 
@@ -327,18 +327,18 @@ for feature_dir in "$DISCOVERIES_DIR"/*/*/; do
     [[ -n "$rd" ]] && review_decision="\"$(json_escape "$rd")\""
   fi
 
-  # Register project and accumulate counts
-  proj_register "$eff_project"
+  # Register mission and accumulate counts
+  proj_register "$eff_mission"
   case "$phase" in
-    seed|exploring)                       proj_counter_inc "$eff_project" "draft" ;;
-    ready|planned|building|done|approved) proj_counter_inc "$eff_project" "final" ;;
-    shipped)                              proj_counter_inc "$eff_project" "archived" ;;
-    *)                                    proj_counter_inc "$eff_project" "draft" ;;
+    seed|exploring)                       proj_counter_inc "$eff_mission" "draft" ;;
+    ready|planned|building|done|approved) proj_counter_inc "$eff_mission" "final" ;;
+    shipped)                              proj_counter_inc "$eff_mission" "archived" ;;
+    *)                                    proj_counter_inc "$eff_mission" "draft" ;;
   esac
 
   # Build initiative JSON object
   id_esc=$(json_escape "$fm_id")
-  proj_esc=$(json_escape "$eff_project")
+  proj_esc=$(json_escape "$eff_mission")
   phase_esc=$(json_escape "$phase")
   created_esc=$(json_escape "${fm_created:-}")
   updated_esc=$(json_escape "${fm_updated:-}")
@@ -502,12 +502,12 @@ first_project=1
 while IFS= read -r proj; do
     [[ -z "$proj" ]] && continue
 
-    # Apply project filter
-    if [[ -n "$FILTER_PROJECT" && "$proj" != "$FILTER_PROJECT" ]]; then
+    # Apply mission filter
+    if [[ -n "$FILTER_MISSION" && "$proj" != "$FILTER_MISSION" ]]; then
       continue
     fi
 
-    draft_c=$(proj_counter_get "$proj" "draft")
+    draft_c=$(proj_counter_get "$proj" "draft")  # proj here is the mission id from ALL_PROJECTS_FILE
     final_c=$(proj_counter_get "$proj" "final")
     archived_c=$(proj_counter_get "$proj" "archived")
     total_c=$(( draft_c + final_c + archived_c ))
@@ -614,8 +614,8 @@ fi
 
 GENERATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%S")
 
-if [[ -n "$FILTER_PROJECT" ]]; then
-  FILTER_VAL="\"$(json_escape "$FILTER_PROJECT")\""
+if [[ -n "$FILTER_MISSION" ]]; then
+  FILTER_VAL="\"$(json_escape "$FILTER_MISSION")\""
 else
   FILTER_VAL="null"
 fi

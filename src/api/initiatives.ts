@@ -28,8 +28,8 @@ function errorResponse(message: string, status: number): Response {
 
 interface DocumentEntry {
   path: string;
-  project: string;
-  initiative: string;
+  mission: string;
+  module: string;
   type: string;
   data: Record<string, unknown>;
   valid: boolean;
@@ -38,19 +38,19 @@ interface DocumentEntry {
 
 async function collectDocuments(opts: {
   type?: string;
-  project?: string;
+  mission?: string;
 }): Promise<DocumentEntry[]> {
   const root = getInitiativesRoot();
-  const projects = opts.project ? [opts.project] : listProjects();
+  const missions = opts.mission ? [opts.mission] : listProjects();
   const targetTypes = opts.type ? [opts.type] : DOCUMENT_TYPES;
 
   const entries: DocumentEntry[] = [];
 
-  for (const project of projects) {
-    const initiatives = listInitiatives(project);
+  for (const mission of missions) {
+    const modules = listInitiatives(mission);
 
-    for (const initiative of initiatives) {
-      const initDir = join(root, project, initiative);
+    for (const module of modules) {
+      const initDir = join(root, mission, module);
       if (!existsSync(initDir)) continue;
 
       const files = readdirSync(initDir).filter((f) => targetTypes.includes(f));
@@ -75,8 +75,8 @@ async function collectDocuments(opts: {
 
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: parsed.data,
             valid,
@@ -85,8 +85,8 @@ async function collectDocuments(opts: {
         } catch (err) {
           entries.push({
             path: filePath,
-            project,
-            initiative,
+            mission,
+            module,
             type: file,
             data: {},
             valid: false,
@@ -102,13 +102,13 @@ async function collectDocuments(opts: {
 
 export async function handleList(params: {
   type?: string;
-  project?: string;
+  mission?: string;
 }): Promise<Response> {
   try {
     const documents = await collectDocuments(params);
     return jsonResponse({
       count: documents.length,
-      filters: { type: params.type ?? null, project: params.project ?? null },
+      filters: { type: params.type ?? null, mission: params.mission ?? null },
       documents,
     });
   } catch (err) {
@@ -117,32 +117,32 @@ export async function handleList(params: {
 }
 
 export async function handleGetStatus(
-  project: string,
+  mission: string,
   slug: string
 ): Promise<Response> {
   try {
-    const { status, artifacts } = await deriveStatus(project, slug);
-    return jsonResponse({ project, slug, status, artifacts });
+    const { status, artifacts } = await deriveStatus(mission, slug);
+    return jsonResponse({ mission, slug, status, artifacts });
   } catch (err) {
     return errorResponse(String(err), 500);
   }
 }
 
 export async function handleGetDocument(
-  project: string,
+  mission: string,
   slug: string,
   docType: string
 ): Promise<Response> {
   try {
-    const initDir = resolveInitiativePath(project, slug);
+    const initDir = resolveInitiativePath(mission, slug);
     if (!existsSync(initDir)) {
-      return errorResponse(`Initiative not found: ${project}/${slug}`, 404);
+      return errorResponse(`Initiative not found: ${mission}/${slug}`, 404);
     }
 
     const filePath = join(initDir, docType);
     if (!existsSync(filePath)) {
       return errorResponse(
-        `Document not found: ${project}/${slug}/${docType}`,
+        `Document not found: ${mission}/${slug}/${docType}`,
         404
       );
     }

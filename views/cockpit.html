@@ -176,11 +176,11 @@
           <strong x-text="totalCount"></strong>
         </div>
 
-        <!-- Per-project counts -->
-        <template x-for="project in projects" :key="project">
+        <!-- Per-mission counts -->
+        <template x-for="mission in missions" :key="mission">
           <div class="stat-chip">
-            <span x-text="project"></span>
-            <strong x-text="initiatives.filter(d => d.project === project).length"></strong>
+            <span x-text="mission"></span>
+            <strong x-text="initiatives.filter(d => d.mission === mission).length"></strong>
           </div>
         </template>
       </div>
@@ -197,19 +197,19 @@
       </template>
     </div>
 
-    <!-- Project tab bar -->
+    <!-- Mission tab bar -->
     <div class="project-tab-bar">
       <button
         class="tab-btn"
-        :class="{ active: activeProject === 'all' }"
-        @click="setProject('all')"
+        :class="{ active: activeMission === 'all' }"
+        @click="setMission('all')"
       >all</button>
-      <template x-for="project in projects" :key="project">
+      <template x-for="mission in missions" :key="mission">
         <button
           class="tab-btn"
-          :class="{ active: activeProject === project }"
-          @click="setProject(project)"
-          x-text="project"
+          :class="{ active: activeMission === mission }"
+          @click="setMission(mission)"
+          x-text="mission"
         ></button>
       </template>
     </div>
@@ -249,14 +249,14 @@
 
       <!-- Section label -->
       <div class="section-label">
-        <span x-text="activeProject === 'all' ? 'all initiatives' : activeProject"></span>
+        <span x-text="activeMission === 'all' ? 'all initiatives' : activeMission"></span>
         <span style="color:#334155; margin-left:6px;">·</span>
         <span style="margin-left:6px;" x-text="filteredInitiatives.length + ' total'"></span>
       </div>
 
       <!-- Initiative grid -->
       <div class="initiative-grid">
-        <template x-for="doc in filteredInitiatives" :key="(doc.project || '') + '/' + (doc.initiative || doc.slug || '')">
+        <template x-for="doc in filteredInitiatives" :key="(doc.mission || '') + '/' + (doc.module || doc.slug || '')">
           <div
             x-data="initiativeCard(doc)"
             class="initiative-card"
@@ -268,11 +268,11 @@
               <div class="flex-1 min-w-0">
                 <!-- Title -->
                 <div style="font-size:12px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="title"></div>
-                <!-- Project + slug -->
+                <!-- Mission + slug -->
                 <div style="font-size:10px; color:#475569; margin-top:2px;">
-                  <span x-text="doc.project || '—'"></span>
+                  <span x-text="doc.mission || '—'"></span>
                   <span style="color:#2a3045; margin: 0 3px;">·</span>
-                  <span x-text="doc.initiative || doc.slug || '—'"></span>
+                  <span x-text="doc.module || doc.slug || '—'"></span>
                 </div>
               </div>
               <!-- Status badge -->
@@ -332,7 +332,7 @@
               </div>
 
               <!-- Path -->
-              <div style="margin-top:8px; font-size:9px; color:#2a3045; word-break:break-all;" x-text="doc.project + '/' + doc.initiative"></div>
+              <div style="margin-top:8px; font-size:9px; color:#2a3045; word-break:break-all;" x-text="doc.mission + '/' + doc.module"></div>
             </div>
           </div>
         </template>

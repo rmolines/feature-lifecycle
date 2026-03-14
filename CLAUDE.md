@@ -104,19 +104,6 @@ All logging in this codebase uses `process.stderr.write(...)` directly. Never ad
 `console.log` calls anywhere under `src/`. For debug output, always use
 `process.stderr.write("[tag] message\n")`.
 
-### HTTP API uses `project`/`initiative` — MCP tools use `mission`/`module`
-The HTTP API (`src/api/initiatives.ts`) and MCP tools (`src/tools/`) use different
-names for the same filesystem concepts:
-
-| Concept | HTTP API field | MCP tool parameter |
-|---|---|---|
-| Top-level directory under `~/.claude/initiatives/` | `project` | `mission` |
-| Subdirectory (feature slug) | `initiative` / `slug` | `module` |
-
-Both layers resolve to the same path: `~/.claude/initiatives/<project>/<slug>/`.
-An agent reading MCP tool schemas and then constructing HTTP API calls (or vice versa)
-will use the wrong field names and get 404s or empty results with no schema error.
-
 ### `parse_requirements` in plan-view.sh silently drops requirements on format mismatch
 The awk parser in `scripts/plan-view.sh` only recognises requirement lines matching
 exactly `- **R<N>:** <text>`. Any deviation — missing bold markers (`- R1: text`),

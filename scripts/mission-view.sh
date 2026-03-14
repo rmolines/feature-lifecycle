@@ -101,8 +101,8 @@ audience = {
     'secondary': clean_audience(secondary_m.group(1)) if secondary_m else '',
 }
 
-# ── Milestones ────────────────────────────────────────────────────────────────
-stages_section = get_section(body, 'Milestones')
+# ── Stages ────────────────────────────────────────────────────────────────────
+stages_section = get_section(body, 'Stages')
 stage_blocks = re.split(r'^(?=### S\d+:)', stages_section, flags=re.MULTILINE)
 
 stages = []
