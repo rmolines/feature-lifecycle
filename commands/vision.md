@@ -236,7 +236,7 @@ Create `mission.md` from template (`templates/mission-template.md`):
 
 After saving mission.md, open the mission view in the browser:
 ```bash
-open http://localhost:3333/mission-view?m=<mission-id>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
 Where `<mission-id>` is the mission slug (basename of the mission directory). This opens the mission in the browser for human review.
 
@@ -295,7 +295,7 @@ Update mission.md:
 
 After updating mission.md, open the mission view in the browser:
 ```bash
-open http://localhost:3333/mission-view?m=<mission-id>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
 
 Report state: risks validated (N/M), pending risks, suggested next cycle.
@@ -354,7 +354,7 @@ If all 6 pass:
 
 Open the final mission view in the browser:
 ```bash
-open http://localhost:3333/mission-view?m=<mission-id>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
 
 ### Close

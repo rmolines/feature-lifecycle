@@ -2,11 +2,12 @@
 
 ## Pitfalls
 
-### All views served by workspace server — no bash HTML generation
-Views (cockpit, mission-view, plan-view) are served by the workspace server
-(`src/server.ts` on port 3333). HTML files live in `views/`. The server auto-refreshes
-via WebSocket when files in `~/.claude/initiatives/` change. Skills open views via
-`open http://localhost:3333/<view>`. No bash scripts generate HTML.
+### MCP and HTTP are separate processes
+The MCP server (`src/index.ts`) handles CRUD tools over stdio. The HTTP server
+(`src/serve.ts` → `src/server.ts`) serves views on port 3333 with WebSocket
+auto-refresh. They are independent — MCP must never import or start the HTTP server.
+Skills that open views call `bash ~/git/launchpad/scripts/ensure-server.sh` first
+to guarantee the HTTP server is running. No bash scripts generate HTML.
 
 ### `status:` frontmatter is stale — derive status from the filesystem
 As of domain-model-v2, discovery status is derived from filesystem artifacts by

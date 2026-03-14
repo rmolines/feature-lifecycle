@@ -350,9 +350,9 @@ validation_result:
 After writing results.md, open the visual results view in the browser:
 
 ```bash
-open http://localhost:3333/plan-view?m=<mission>&mod=<module>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/plan-view?m=<mission>&mod=<module>
 ```
-Where `<mission>` is the mission slug and `<module>` is the feature slug. The server auto-refreshes Mission Control via watcher — no explicit refresh needed.
+Where `<mission>` is the mission slug and `<module>` is the feature slug.
 
 ---
 

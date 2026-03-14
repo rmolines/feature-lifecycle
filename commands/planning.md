@@ -388,9 +388,9 @@ After approval, save to the same directory as prd.md:
 
 Use the template from `templates/plan-template.md` as the base structure.
 
-Then open the visual plan view so the human can review the structure in the browser:
+Then ensure the workspace server is running and open the visual plan view:
 ```bash
-open http://localhost:3333/plan-view?m=<mission>&mod=<module>
+bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/plan-view?m=<mission>&mod=<module>
 ```
 Where `<mission>` is the repo/mission slug and `<module>` is the feature slug (extracted from the plan path).
 
