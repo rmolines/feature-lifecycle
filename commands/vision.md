@@ -60,26 +60,30 @@ One question at a time. Justify before asking. Push back when something doesn't 
 
 ### Filesystem structure
 
-Missions live under `~/.claude/initiatives/<mission>/`. The mission.md sits at the
-mission root, stages are subdirectories:
+Missions live under `~/.claude/missions/<mission>/`. The mission.md sits at the
+mission root, stages are subdirectories, and modules live inside stages:
 
 ```
-~/.claude/initiatives/ciclosp/
+~/.claude/missions/ciclosp/
   mission.md                         ← this command's artifact
   cycles/                            ← mission-level investigation cycles
     01-framing-thesis.md
     02-research-market.md
-  mvp-mapa/                          ← stage → /discovery handles this
-    draft.md or prd.md
-  navegacao/
-    draft.md or prd.md
+  mvp/                               ← stage directory
+    stage.md                         ← stage artifact (this command creates)
+    mapa/                            ← module → /discovery handles this
+      module.md or prd.md
+    roteamento/
+      module.md or prd.md
+  _backlog/                          ← catch-all stage for unassigned modules
+    stage.md
 ```
 
 ### Parse arguments
 
-- Simple slug → mission name. Look for `~/.claude/initiatives/<slug>/mission.md`
+- Simple slug → mission name. Look for `~/.claude/missions/<slug>/mission.md`
 
-> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> **Reading missions files:** see CLAUDE.md pitfall "Reading initiatives files".
 > TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view
@@ -90,11 +94,11 @@ mission root, stages are subdirectories:
 When called with `--status` or with no arguments:
 
 ```bash
-for dir in ~/.claude/initiatives/*/; do
+for dir in ~/.claude/missions/*/; do
   [ -f "$dir/mission.md" ] || continue
   mission=$(basename "$dir")
   status=$(grep "^status:" "$dir/mission.md" | head -1 | sed 's/^status: //')
-  stages=$(ls -d "$dir"/*/draft.md "$dir"/*/prd.md 2>/dev/null | wc -l)
+  stages=$(ls -d "$dir"/*/stage.md 2>/dev/null | wc -l)
   echo "$mission  $status  ${stages} stages"
 done
 ```
@@ -113,10 +117,10 @@ What do you want to work on?
 Also show stage status for each mission by checking filesystem:
 ```
   ciclosp:
-    S1 mvp-mapa     prd.md ready  → /launchpad:planning ciclosp/mvp-mapa
-    S2 navegacao     draft.md      → /launchpad:discovery ciclosp/navegacao
-    S3 comunidade    not started   → /launchpad:discovery ciclosp/comunidade
-    S4 launch        not started   → /launchpad:discovery ciclosp/launch
+    S1 mvp         stage.md + 2 modules  → /launchpad:discovery ciclosp/mvp/<module>
+    S2 crescimento  stage.md              → /launchpad:discovery ciclosp/crescimento/<module>
+    S3 comunidade   not started           → /launchpad:discovery ciclosp/comunidade/<module>
+    S4 launch       not started           → /launchpad:discovery ciclosp/launch/<module>
 ```
 
 ### Route
@@ -226,6 +230,16 @@ These blockers become the first investigation cycles when the user runs
 
 Write `cycles/01-framing-<desc>.md` with: thesis, audience, stages, risks identified.
 
+For each stage sketched, create a stage directory under `~/.claude/missions/<mission>/` with a `draft-stage.md` (minimal stub — full stage.md is created at finalization):
+```bash
+mkdir -p ~/.claude/missions/<mission>/<stage-slug>/
+```
+
+Also create the `_backlog/` catch-all stage:
+```bash
+mkdir -p ~/.claude/missions/<mission>/_backlog/
+```
+
 Create `mission.md` from template (`templates/mission-template.md`):
 - Set frontmatter: `id`, `status: draft`, `created`, `updated`, `tags`
 - Fill **Thesis** + **Kill condition**
@@ -238,7 +252,7 @@ After saving mission.md, open the mission view in the browser:
 ```bash
 bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/mission-view?m=<mission-id>
 ```
-Where `<mission-id>` is the mission slug (basename of the mission directory). This opens the mission in the browser for human review.
+Where `<mission-id>` is the mission slug (basename of the mission directory under `~/.claude/missions/`). This opens the mission in the browser for human review.
 
 Report state and suggest next cycle or `/clear`.
 
@@ -330,6 +344,9 @@ Pass: "If CET data is not programmatically accessible and no alternative source 
 The highest-risk hypothesis should be validated earliest. If S3 has the biggest
 uncertainty but depends on S1 and S2, challenge whether S3 can be tested sooner.
 
+**3b. Stages have functional names.**
+Stage names must reflect the outcome they deliver, not generic labels (e.g. `mvp`, `crescimento`, `comunidade` — not `stage-1`, `phase-2`, `milestone-3`). Reject generic names at this gate.
+
 **4. Each stage has independent value.**
 If you stop after any stage, something useful exists. No stage is pure
 infrastructure with no user value.
@@ -347,10 +364,11 @@ Ask the human to resolve them.
 
 ### Generate validated mission
 
-If all 6 pass:
+If all items pass (including 3b):
 - Update mission.md frontmatter: `status: validated`, `updated: <today>`
 - Consolidate language (remove hedging)
-- Ensure stages have correct entry commands
+- Ensure stages have correct entry commands (`/launchpad:discovery <mission>/<stage>/<module>`)
+- Create `stage.md` for each stage from template (`templates/stage-template.md`), saved to `~/.claude/missions/<mission>/<stage>/stage.md`
 
 Open the final mission view in the browser:
 ```bash
@@ -366,8 +384,8 @@ Suggest next step:
 ```
 Mission validated. Next steps:
 
-  /launchpad:discovery <mission>/<first-stage>  ← start here
-  /launchpad:vision <mission> --status          ← check progress anytime
+  /launchpad:discovery <mission>/<first-stage>/<module>  ← start here
+  /launchpad:vision <mission> --status                    ← check progress anytime
 ```
 
 Recommend `/clear` before continuing.

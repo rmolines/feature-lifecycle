@@ -23,8 +23,8 @@ Input: $ARGUMENTS
 ### Resolve PRD and plan
 
 Same resolution as `/launchpad:review`:
-- `$ARGUMENTS` → `~/.claude/initiatives/$ARGUMENTS/`
-- Inside a repo → infer from `$REPO_NAME`
+- `$ARGUMENTS` → `~/.claude/missions/$ARGUMENTS/` (try `module.md` first, then `prd.md`)
+- Inside a repo → infer from `$REPO_NAME`, check `~/.claude/missions/$REPO_NAME/` recursively
 - Multiple → list and ask
 - None → warn, proceed without (PR won't include PRD references)
 
@@ -333,11 +333,22 @@ git branch -D "worktree-$FEATURE" 2>/dev/null || true
 
 ### Archive discovery
 
+Determine the full path of the module directory (mission/stage/module structure):
+
 ```bash
-DISCOVERY_DIR="$HOME/.claude/initiatives/$REPO_NAME/$FEATURE"
-if [ -d "$DISCOVERY_DIR" ]; then
-  mkdir -p "$HOME/.claude/initiatives/$REPO_NAME/archived/"
-  mv "$DISCOVERY_DIR" "$HOME/.claude/initiatives/$REPO_NAME/archived/$FEATURE"
+# Resolve module directory — could be at mission/stage/module depth
+MODULE_DIR=$(find "$HOME/.claude/missions/$REPO_NAME" -name "module.md" -o -name "prd.md" 2>/dev/null | \
+  xargs -I{} dirname {} | grep -F "$FEATURE" | head -1)
+
+if [ -z "$MODULE_DIR" ]; then
+  # Fallback: try direct path
+  MODULE_DIR="$HOME/.claude/missions/$REPO_NAME/$STAGE/$FEATURE"
+fi
+
+if [ -d "$MODULE_DIR" ]; then
+  STAGE_DIR=$(dirname "$MODULE_DIR")
+  mkdir -p "$STAGE_DIR/archived/"
+  mv "$MODULE_DIR" "$STAGE_DIR/archived/$FEATURE"
 fi
 ```
 
@@ -364,9 +375,9 @@ Mission Control auto-refreshes via the workspace server watcher — no explicit 
 
 **Cleanup:**
 - Worktree: <removed | not applicable>
-- Discovery: moved to ~/.claude/initiatives/<repo>/archived/<feature>/
+- Discovery: moved to ~/.claude/missions/<mission>/<stage>/archived/<module>/
 
-Cycle closed. Next: /launchpad:discovery for the next feature.
+Cycle closed. Next: /launchpad:discovery for the next module.
 ```
 
 ---

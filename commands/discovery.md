@@ -74,36 +74,64 @@ if git rev-parse --is-inside-work-tree 2>/dev/null; then
 fi
 ```
 
-- **Inside a repo** → features live under `~/.claude/initiatives/$MISSION_NAME/<feature>/`.
+- **Inside a repo** → modules live under `~/.claude/missions/$MISSION_NAME/<stage>/<module>/`.
   Read `.claude/project.md` and `CLAUDE.md` for project context.
-- **Outside a repo** → new mission. Features live under `~/.claude/initiatives/<mission>/`.
+- **Outside a repo** → new mission. Modules live under `~/.claude/missions/<mission>/<stage>/<module>/`.
 
-### Check for mission context
+### Determine operating mode (dual mode)
+
+Parse the argument to determine the level:
 
 ```bash
-# Resolve mission name from argument (e.g. "ciclosp/mvp-mapa" → "ciclosp")
-MISSION=$(echo "$ARGUMENTS" | cut -d'/' -f1)
-[ -z "$MISSION" ] && MISSION=$MISSION_NAME
-MISSION_PATH="$HOME/.claude/initiatives/$MISSION/mission.md"
+PARTS=$(echo "$ARGUMENTS" | tr '/' '\n' | wc -l)
+# <mission>/<stage>        → 2 parts → STAGE mode
+# <mission>/<stage>/<module> → 3 parts → MODULE mode (default)
 ```
 
-If `mission.md` exists at the mission level, **read it before starting**. The mission
-provides strategic context that informs this feature's discovery:
+**Stage mode** (`<mission>/<stage>`): operates on `stage.md` in `~/.claude/missions/<mission>/<stage>/`.
+- Framing produces `draft-stage.md`
+- Finalization produces `stage.md`
+- Purpose: define the stage hypothesis, sequence, and entry criteria
 
-- **Thesis** — why this product exists (frames the feature's purpose)
-- **Stages** — where this feature sits in the sequence (informs scope and dependencies)
-- **Strategy** — platform, distribution, monetization (informs technical decisions)
-- **Kill conditions** — mission-level and stage-level (may affect this feature)
+**Module mode** (`<mission>/<stage>/<module>`): operates on `module.md` (or `prd.md` fallback) in `~/.claude/missions/<mission>/<stage>/<module>/`.
+- Framing produces `draft-module.md`
+- Finalization produces `module.md`
+- This is the default mode — most discovery sessions are module-level
+
+### Check for mission and stage context
+
+```bash
+# Resolve mission name from argument
+MISSION=$(echo "$ARGUMENTS" | cut -d'/' -f1)
+[ -z "$MISSION" ] && MISSION=$MISSION_NAME
+MISSION_PATH="$HOME/.claude/missions/$MISSION/mission.md"
+STAGE=$(echo "$ARGUMENTS" | cut -d'/' -f2)
+STAGE_PATH="$HOME/.claude/missions/$MISSION/$STAGE/stage.md"
+```
+
+Read upward in the hierarchy before starting:
+
+1. If `mission.md` exists → read it for strategic context:
+   - **Thesis** — why this product exists (frames the module's purpose)
+   - **Stages** — where this module sits in the sequence (informs scope and dependencies)
+   - **Strategy** — platform, distribution, monetization (informs technical decisions)
+   - **Kill conditions** — mission-level (may affect this module)
+
+2. If `stage.md` (or `draft-stage.md`) exists → read it for stage context:
+   - **Stage hypothesis** — what this stage is validating
+   - **Entry criteria** — what must be true to start this stage
+   - **Stage kill condition** — what would invalidate the whole stage
 
 Use this context to calibrate framing depth and push back on scope creep. If the user
-proposes something that contradicts the mission, flag it:
+proposes something that contradicts the mission or stage, flag it:
 "The mission says X, but you're proposing Y — should we update the mission or adjust
-this feature's scope?"
+this module's scope?"
 
 ### Parse arguments
 
-- Contains `/` → explicit `<mission>/<feature>` path
-- Simple slug → feature name (inside detected mission) or mission name (outside repo)
+- 3 parts (`<mission>/<stage>/<module>`) → MODULE mode for that explicit path
+- 2 parts (`<mission>/<stage>`) → STAGE mode for that stage
+- Simple slug → module name (inside detected mission, infer stage or use `_backlog`)
 - `--finalize` → jump to finalization
 - `--status` → show portfolio view (see below)
 - Empty → show portfolio view if modules exist, then ask what to explore
@@ -114,18 +142,26 @@ When called with `--status`, or with no arguments and existing modules, show the
 state of all features for the current mission (or all missions if outside a repo):
 
 ```bash
-for dir in ~/.claude/initiatives/$MISSION_NAME/*/; do
-  [ -d "$dir" ] || continue
-  feature=$(basename "$dir")
-  if [ -f "$dir/review.md" ] && grep -q "^decision: approved" "$dir/review.md"; then status="approved"
-  elif [ -f "$dir/results.md" ]; then status="done"
-  elif [ -f "$dir/plan.md" ]; then status="planned"
-  elif [ -f "$dir/prd.md" ]; then status="ready"
-  elif [ -d "$dir/cycles" ]; then status="exploring"
-  elif [ -f "$dir/draft.md" ]; then status="seed"
-  else status="not started"
-  fi
-  echo "$feature  $status"
+# Iterate stages under the mission
+for stage_dir in ~/.claude/missions/$MISSION_NAME/*/; do
+  [ -d "$stage_dir" ] || continue
+  stage=$(basename "$stage_dir")
+  [ "$stage" = "cycles" ] && continue
+  [ -f "$stage_dir/stage.md" ] && echo "  [stage] $stage"
+  # Iterate modules within the stage
+  for dir in "$stage_dir"*/; do
+    [ -d "$dir" ] || continue
+    module=$(basename "$dir")
+    if [ -f "$dir/review.md" ] && grep -q "^decision: approved" "$dir/review.md"; then status="approved"
+    elif [ -f "$dir/results.md" ]; then status="done"
+    elif [ -f "$dir/plan.md" ]; then status="planned"
+    elif [ -f "$dir/module.md" ] || [ -f "$dir/prd.md" ]; then status="ready"
+    elif [ -d "$dir/cycles" ]; then status="exploring"
+    elif [ -f "$dir/draft-module.md" ] || [ -f "$dir/draft.md" ]; then status="seed"
+    else status="not started"
+    fi
+    echo "    $module  $status"
+  done
 done
 ```
 
@@ -133,10 +169,13 @@ Present as a summary:
 ```
 Portfolio: <mission>
 
-  auth          ready      → next: /launchpad:planning auth
-  dashboard     exploring  → 3 cycles done, 2 risks pending
-  billing       seed       → framing only
-  onboarding    done       → shipped
+  [stage] mvp
+    auth          ready      → next: /launchpad:planning <mission>/mvp/auth
+    dashboard     exploring  → 3 cycles done, 2 risks pending
+  [stage] crescimento
+    billing       seed       → framing only
+  [stage] _backlog
+    onboarding    done       → shipped
 
 What do you want to work on?
 ```
@@ -145,9 +184,9 @@ State is determined by filesystem artifacts:
 - `review.md` with `decision: approved` → approved
 - `results.md` exists → done
 - `plan.md` exists → planned
-- `prd.md` exists → ready (next: `/launchpad:planning`)
+- `module.md` or `prd.md` exists → ready (next: `/launchpad:planning`)
 - `cycles/` directory exists → exploring
-- `draft.md` exists → seed
+- `draft-module.md` or `draft.md` exists → seed
 - Nothing → not started
 
 After showing the portfolio, ask what the user wants to do: resume an existing
@@ -155,12 +194,18 @@ discovery, start a new one, or finalize one that's ready.
 
 ### Route
 
-- **`draft.md` exists** → resume. Read draft, list completed cycles, ask which risk to tackle next.
+**In STAGE mode:**
+- **`stage.md` exists** → already finalized. Show stage summary and suggest `/launchpad:discovery <mission>/<stage>/<module>` for modules.
+- **`draft-stage.md` exists** → resume stage discovery. Read draft, list completed cycles, ask which aspect to tackle.
+- **Nothing exists** → new stage discovery. Start with framing (stage hypothesis, entry criteria, kill condition).
 
-> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+**In MODULE mode:**
+- **`draft-module.md` or `draft.md` exists** → resume. Read draft, list completed cycles, ask which risk to tackle next.
+
+> **Reading missions files:** see CLAUDE.md pitfall "Reading initiatives files".
 > TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - **`review.md` exists with `decision: back-to-discovery`** → amendment mode. Read `review.md`
-  and the existing `prd.md`. Present the review findings to the user:
+  and the existing `module.md` (or `prd.md` as fallback). Present the review findings to the user:
   ```
   Amendment mode — review found issues requiring PRD changes:
 
@@ -170,20 +215,20 @@ discovery, start a new one, or finalize one that's ready.
   Action items:
   - <items from review.md>
 
-  Current PRD: <feature>/prd.md
+  Current PRD: <stage>/<module>/module.md
   ```
 
   Then operate as a **focused amendment session**:
   - Do NOT re-frame the problem or re-run risk identification
   - Focus only on incorporating the review's action items into the PRD
   - Use light framing: validate the proposed changes with the user, don't extract from scratch
-  - When changes are agreed, update `prd.md` directly (it was already finalized once)
+  - When changes are agreed, update `module.md` directly (or `prd.md` if module.md doesn't exist — it was already finalized once)
   - Run the Quality Gate on the updated PRD before saving
   - After saving: delete `review.md` to clear the amendment flag
 
-  Suggest next step: `/launchpad:planning <feature>` (which will also operate in amendment mode
+  Suggest next step: `/launchpad:planning <mission>/<stage>/<module>` (which will also operate in amendment mode
   if its own review.md routing applies, or in normal mode on the updated PRD).
-- **`prd.md` exists** → already finalized. Ask: reopen or proceed to `/launchpad:planning`?
+- **`module.md` or `prd.md` exists** → already finalized. Ask: reopen or proceed to `/launchpad:planning`?
 - **Nothing exists** → new discovery. Start with framing.
 
 ### Calibrate depth
@@ -241,12 +286,13 @@ Once the problem is clear, evaluate whether it's one feature or multiple:
 > value independently and has different risks. I suggest we create separate discoveries
 > for each. Which one do you want to prioritize?"
 
-Then create initial drafts for each feature under the same mission:
+Then create initial drafts for each module under the same mission/stage:
 ```
-~/.claude/initiatives/<mission>/auth/draft.md
-~/.claude/initiatives/<mission>/dashboard/draft.md
-~/.claude/initiatives/<mission>/billing/draft.md
+~/.claude/missions/<mission>/<stage>/auth/draft-module.md
+~/.claude/missions/<mission>/<stage>/dashboard/draft-module.md
+~/.claude/missions/<mission>/<stage>/billing/draft-module.md
 ```
+If no stage is determined, use `_backlog` as the stage.
 
 Each draft gets the shared framing context (problem, mission background) but scoped to
 its specific feature. The human then runs `/launchpad:discovery <mission>/<feature>` on each one
@@ -274,12 +320,13 @@ ask the human.
 Write `cycles/01-framing-<desc>.md` with: risk investigated, method, discoveries, decision,
 identified risks for investigation.
 
-Create `draft.md` from the PRD template (`templates/prd-template.md`):
+**In MODULE mode:** Create `draft-module.md` from the module template (`templates/module-template.md`, fallback: `templates/prd-template.md`):
 - Add YAML frontmatter at the top:
   ```yaml
   ---
-  id: <feature-slug>
+  id: <module-slug>
   mission: <MISSION_NAME>
+  stage: <STAGE_NAME>
   created: <today YYYY-MM-DD>
   updated: <today YYYY-MM-DD>
   priority: medium
@@ -289,6 +336,12 @@ Create `draft.md` from the PRD template (`templates/prd-template.md`):
   ```
 - Fill **Problem** with the crystallized formulation
 - Leave **Solution** and **Out-of-scope** as initial hypotheses or blank
+- Save to: `~/.claude/missions/<mission>/<stage>/<module>/draft-module.md`
+
+**In STAGE mode:** Create `draft-stage.md` from the stage template (`templates/stage-template.md`):
+- Add YAML frontmatter
+- Fill **Stage hypothesis** and **Entry criteria**
+- Save to: `~/.claude/missions/<mission>/<stage>/draft-stage.md`
 
 Report state and suggest next cycle or `/clear`.
 
@@ -419,14 +472,20 @@ If any item fails: report which items failed with specific gaps found.
 Ask the human to resolve them — either through conversation now or another cycle.
 Do not generate the PRD.
 
-### Generate prd.md
+### Generate module.md (or stage.md in stage mode)
 
-If all 5 pass:
-- Copy draft.md to prd.md
-- Update the YAML frontmatter in prd.md:
+**In MODULE mode — if all 5 pass:**
+- Copy `draft-module.md` to `module.md` (preferred) at the same path
+  - Also keep `prd.md` as an alias if desired (legacy support), but `module.md` is canonical
+- Update the YAML frontmatter in `module.md`:
   - `updated: <today YYYY-MM-DD>`
 - Consolidate language (remove "we think", "it seems", hedging)
 - Ensure each section is self-contained (the `/launchpad:planning` agent reads this with zero context)
+- Save to: `~/.claude/missions/<mission>/<stage>/<module>/module.md`
+
+**In STAGE mode — if stage framing is complete:**
+- Copy `draft-stage.md` to `stage.md`
+- Save to: `~/.claude/missions/<mission>/<stage>/stage.md`
 
 If the PRD is for a new mission, flag it:
 "This PRD is for a new mission. `/launchpad:planning` will include repo setup as the first deliverable."
@@ -436,7 +495,7 @@ If the PRD is for a new mission, flag it:
 Report: problem (one line), solution (one line), risks validated (count + types),
 risks accepted (count), cycles completed (count).
 
-Next step: `/launchpad:planning <slug>`. Recommend `/clear` before continuing.
+Next step (module mode): `/launchpad:planning <mission>/<stage>/<module>`. Recommend `/clear` before continuing.
 
 ---
 

@@ -31,14 +31,20 @@ without asking anything, without session context, without reading other delivera
 
 **If `$ARGUMENTS` provided:**
 Try in order:
-1. `~/.claude/initiatives/$ARGUMENTS/prd.md`
-2. `~/.claude/initiatives/*/$ARGUMENTS/prd.md` (glob)
-3. `$ARGUMENTS` as literal path
+1. `~/.claude/missions/$ARGUMENTS/module.md` (preferred — new format)
+2. `~/.claude/missions/$ARGUMENTS/prd.md` (fallback — legacy format)
+3. `~/.claude/missions/*/$ARGUMENTS/module.md` (glob, one level deep)
+4. `~/.claude/missions/*/$ARGUMENTS/prd.md` (glob, legacy fallback)
+5. `~/.claude/missions/*/*/$ARGUMENTS/module.md` (glob, two levels — mission/stage/module)
+6. `~/.claude/missions/*/*/$ARGUMENTS/prd.md` (glob, two levels, legacy)
+7. `$ARGUMENTS` as literal path
 
 **If inside a repo (has `.git`):**
 ```bash
 MISSION=$(basename $(git rev-parse --show-toplevel 2>/dev/null))
-ls ~/.claude/initiatives/$MISSION/*/prd.md 2>/dev/null
+ls ~/.claude/missions/$MISSION/*/module.md 2>/dev/null || \
+ls ~/.claude/missions/$MISSION/*/*/module.md 2>/dev/null || \
+ls ~/.claude/missions/$MISSION/*/prd.md 2>/dev/null
 ```
 - Exactly 1 result → use it
 - Multiple → list and ask the user to choose
@@ -46,7 +52,7 @@ ls ~/.claude/initiatives/$MISSION/*/prd.md 2>/dev/null
 
 **If nothing found:**
 ```
-No prd.md found in ~/.claude/initiatives/
+No module.md or prd.md found in ~/.claude/missions/
 Run /launchpad:discovery to create a PRD before planning.
 ```
 
@@ -54,20 +60,22 @@ Run /launchpad:discovery to create a PRD before planning.
 
 Read these **in parallel**:
 
-1. `prd.md` in full — pay special attention to:
+1. `module.md` first (preferred); if not found, fallback to `prd.md`. Pay special attention to:
    - `## Requirements` — functional requirements (R<N>) that define the contract. These are what the review validates.
    - `## Technical Specs` — implementation guidance (stack, patterns, constraints, entry points, technical decisions). Use this to inform deliverable prompts — it's the detail that used to live inside requirements.
-2. `.claude/project.md` or `CLAUDE.md` from the target repo — extract build command,
+2. `stage.md` from `~/.claude/missions/<mission>/<stage>/stage.md` if it exists — read for stage context (hypothesis, entry criteria, kill condition)
+3. `mission.md` from `~/.claude/missions/<mission>/mission.md` if it exists — read for strategic context
+4. `.claude/project.md` or `CLAUDE.md` from the target repo — extract build command,
    test command, hot files, stack, branch conventions
    - If none found: `Warning: no project config — using only the PRD as context`
 
-> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> **Reading missions files:** see CLAUDE.md pitfall "Reading initiatives files".
 > TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 
 ### Check for review.md (amendment mode)
 
 ```bash
-ls ~/.claude/initiatives/$FEATURE_PATH/review.md 2>/dev/null
+ls ~/.claude/missions/$FEATURE_PATH/review.md 2>/dev/null
 ```
 
 If `review.md` exists AND `decision: back-to-planning`:
@@ -120,40 +128,13 @@ Warning: this PRD looks like it covers multiple independent features.
 A plan with this scope will produce vague, oversized deliverables.
 
 Consider going back to /launchpad:discovery to split this into separate PRDs:
-  /launchpad:discovery <mission>/<feature-1>
-  /launchpad:discovery <mission>/<feature-2>
+  /launchpad:discovery <mission>/<stage>/<module-1>
+  /launchpad:discovery <mission>/<stage>/<module-2>
 
 Continue anyway? (The plan will be larger and less precise.)
 ```
 
 Let the user decide — they may have good reasons to keep it together.
-
-### Check for UX requirements
-
-After reading the PRD, scan requirements for UI-related terms: "interface", "tela", "screen",
-"UI", "layout", "navigation", "interação", "visualização", "dashboard", "view", "page", "component".
-
-Also check if the PRD's Technical Specs mention a frontend stack (React, HTML, CSS, etc.).
-
-If UX is detected, report:
-```
-UX detected in PRD requirements: R<N>, R<M>
-
-This plan will include D1 as a `/launchpad:guide` scope — the guide.md must be
-produced before any UI implementation begins.
-
-The guide deliverable runs `/launchpad:guide` conversationally (requires human
-interaction). Subsequent UI deliverables will reference guide.md as their spec.
-```
-
-The D1 deliverable for guide uses:
-- **Executor:** `opus` — needs conversational design thinking with the user
-- **Isolation:** `none`
-- **Acceptance:** `guide.md exists in the initiatives directory`
-
-All subsequent deliverables that touch UI files must include in their prompt:
-> "Read `guide.md` from `~/.claude/initiatives/<mission>/<feature>/guide.md` before
-> implementing. Use it as the UX spec — do not make ad-hoc UX decisions."
 
 ### Flag assumptions
 
@@ -195,10 +176,6 @@ Every deliverable must be a verifiable slice. Ask yourself:
 
 - **New project:** D1 is setup — repo creation, dependencies, CI, basic structure.
   All other deliverables depend on D1.
-
-- **PRD with UX:** D1 is the guide — `/launchpad:guide` produces `guide.md` before any UI
-  implementation begins. This is a conversational deliverable (human-in-the-loop), not a
-  batch-executed one.
 
 ### Maximize parallelism
 
@@ -414,8 +391,8 @@ Wait for the user's response:
 
 ## Save plan.md
 
-After approval, save to the same directory as prd.md:
-`~/.claude/initiatives/<repo>/<feature>/plan.md`
+After approval, save to the same directory as module.md (or prd.md):
+`~/.claude/missions/<mission>/<stage>/<module>/plan.md`
 
 Use the template from `templates/plan-template.md` as the base structure.
 
@@ -423,13 +400,13 @@ Then ensure the workspace server is running and open the visual plan view:
 ```bash
 bash ~/git/launchpad/scripts/ensure-server.sh && open http://localhost:3333/plan-view?m=<mission>&mod=<module>
 ```
-Where `<mission>` is the repo/mission slug and `<module>` is the feature slug (extracted from the plan path).
+Where `<mission>` is the repo/mission slug and `<module>` is the module slug (extracted from the plan path).
 
 Confirm:
 ```
-plan.md saved to ~/.claude/initiatives/<repo>/<feature>/plan.md
+plan.md saved to ~/.claude/missions/<mission>/<stage>/<module>/plan.md
 
-Next step: /launchpad:delivery <repo>/<feature>
+Next step: /launchpad:delivery <mission>/<stage>/<module>
 Recommend /clear before continuing.
 ```
 

@@ -38,26 +38,31 @@ judges from the one who acts.
 ### Resolve PRD and plan
 
 **If `$ARGUMENTS` provided:**
-- Try `~/.claude/initiatives/$ARGUMENTS/prd.md`
-- Try `~/.claude/initiatives/*/$ARGUMENTS/prd.md`
+- Try `~/.claude/missions/$ARGUMENTS/module.md` (preferred — new format)
+- Try `~/.claude/missions/$ARGUMENTS/prd.md` (fallback — legacy format)
+- Try `~/.claude/missions/*/$ARGUMENTS/module.md` (one level deep)
+- Try `~/.claude/missions/*/*/$ARGUMENTS/module.md` (two levels — mission/stage/module)
 - Try as literal path
 
 **If inside a repo (has `.git`):**
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
-ls ~/.claude/initiatives/$REPO_NAME/*/prd.md 2>/dev/null
+ls ~/.claude/missions/$REPO_NAME/*/module.md 2>/dev/null || \
+ls ~/.claude/missions/$REPO_NAME/*/*/module.md 2>/dev/null || \
+ls ~/.claude/missions/$REPO_NAME/*/prd.md 2>/dev/null
 ```
 
 **If multiple:** list and ask.
-**If none:** stop — `No prd.md found. Run /launchpad:discovery first or specify the path.`
+**If none:** stop — `No module.md or prd.md found. Run /launchpad:discovery first or specify the path.`
 
 ### Load context (in parallel)
 
 Read these simultaneously:
-- `prd.md` — focus on: Problem, Requirements, Solution, Out-of-scope
+- `module.md` first (preferred), fallback `prd.md` — focus on: Problem, Requirements, Solution, Out-of-scope
 - `plan.md` — focus on: deliverable list, acceptance criteria, D naming
+- `stage.md` from the parent stage directory (if exists) — for broader stage context
 
-> **Reading initiatives files:** see CLAUDE.md pitfall "Reading initiatives files".
+> **Reading missions files:** see CLAUDE.md pitfall "Reading initiatives files".
 > TL;DR: try `qmd.get` with exact path → if not found → `Bash(cat <full-path>)`.
 - `git diff origin/main...HEAD` — committed changes on the branch
 - `git diff HEAD` — uncommitted changes
@@ -236,8 +241,8 @@ Count only PASS as "passing". Show PARTIAL and UNTESTABLE counts in parentheses.
 
 After presenting the decision to the user, write the evaluation findings to disk so downstream skills can read them after `/clear`.
 
-Save to: `~/.claude/initiatives/<repo>/<feature>/review.md`
-(same directory as `prd.md` and `plan.md`)
+Save to: `~/.claude/missions/<mission>/<stage>/<module>/review.md`
+(same directory as `module.md`/`prd.md` and `plan.md`)
 
 **Use this exact format** (Schema 4 — downstream skills parse it with `grep "^decision:"`):
 
@@ -267,7 +272,7 @@ reason: <1-2 sentence justification>
 
 Reviews are **overwrite, not append** — only the latest review matters. Previous review.md is replaced.
 
-Confirm to the user: `Review findings saved to ~/.claude/initiatives/<repo>/<feature>/review.md`
+Confirm to the user: `Review findings saved to ~/.claude/missions/<mission>/<stage>/<module>/review.md`
 
 ### Route the user
 
