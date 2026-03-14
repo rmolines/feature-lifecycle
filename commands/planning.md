@@ -128,6 +128,33 @@ Continue anyway? (The plan will be larger and less precise.)
 
 Let the user decide — they may have good reasons to keep it together.
 
+### Check for UX requirements
+
+After reading the PRD, scan requirements for UI-related terms: "interface", "tela", "screen",
+"UI", "layout", "navigation", "interação", "visualização", "dashboard", "view", "page", "component".
+
+Also check if the PRD's Technical Specs mention a frontend stack (React, HTML, CSS, etc.).
+
+If UX is detected, report:
+```
+UX detected in PRD requirements: R<N>, R<M>
+
+This plan will include D1 as a `/launchpad:guide` scope — the guide.md must be
+produced before any UI implementation begins.
+
+The guide deliverable runs `/launchpad:guide` conversationally (requires human
+interaction). Subsequent UI deliverables will reference guide.md as their spec.
+```
+
+The D1 deliverable for guide uses:
+- **Executor:** `opus` — needs conversational design thinking with the user
+- **Isolation:** `none`
+- **Acceptance:** `guide.md exists in the initiatives directory`
+
+All subsequent deliverables that touch UI files must include in their prompt:
+> "Read `guide.md` from `~/.claude/initiatives/<mission>/<feature>/guide.md` before
+> implementing. Use it as the UX spec — do not make ad-hoc UX decisions."
+
 ### Flag assumptions
 
 If the PRD lacks explicit scope:
@@ -168,6 +195,10 @@ Every deliverable must be a verifiable slice. Ask yourself:
 
 - **New project:** D1 is setup — repo creation, dependencies, CI, basic structure.
   All other deliverables depend on D1.
+
+- **PRD with UX:** D1 is the guide — `/launchpad:guide` produces `guide.md` before any UI
+  implementation begins. This is a conversational deliverable (human-in-the-loop), not a
+  batch-executed one.
 
 ### Maximize parallelism
 
