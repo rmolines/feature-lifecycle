@@ -73,7 +73,11 @@ export const ModuleSchema = z.object({
 
 export const SCHEMAS: Record<string, z.ZodObject<z.ZodRawShape>> = {
   "draft.md": DraftSchema,
+  "draft-module.md": DraftSchema,
+  "draft-stage.md": StageSchema,
   "prd.md": PrdSchema,
+  "module.md": ModuleSchema,
+  "stage.md": StageSchema,
   "mission.md": MissionSchema,
   "plan.md": PlanSchema,
   "review.md": ReviewSchema,

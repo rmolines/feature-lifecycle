@@ -103,7 +103,7 @@ function classifyModuleStatus(moduleDir: string): "draft" | "final" | "archived"
   const hasReview = existsSync(join(moduleDir, "review.md"));
   const hasResults = existsSync(join(moduleDir, "results.md"));
   const hasPlan = existsSync(join(moduleDir, "plan.md"));
-  const hasPrd = existsSync(join(moduleDir, "prd.md"));
+  const hasPrd = existsSync(join(moduleDir, "prd.md")) || existsSync(join(moduleDir, "module.md"));
 
   if (hasReview || hasResults || hasPlan || hasPrd) {
     return "final";
@@ -193,7 +193,7 @@ async function buildStageEntries(mission: string): Promise<StageEntry[]> {
       let artifacts: string[] = [];
       try {
         const files = readdirSync(moduleDir).filter((f) =>
-          ["draft.md", "prd.md", "plan.md", "results.md", "review.md"].includes(f)
+          ["draft.md", "draft-module.md", "prd.md", "module.md", "plan.md", "results.md", "review.md"].includes(f)
         );
         artifacts = files;
         const category = classifyModuleStatus(moduleDir);
@@ -344,7 +344,7 @@ export async function handleListModules(mission: string, stage: string): Promise
       let artifacts: string[] = [];
       try {
         const files = readdirSync(moduleDir).filter((f) =>
-          ["draft.md", "prd.md", "plan.md", "results.md", "review.md"].includes(f)
+          ["draft.md", "draft-module.md", "prd.md", "module.md", "plan.md", "results.md", "review.md"].includes(f)
         );
         artifacts = files;
         const category = classifyModuleStatus(moduleDir);

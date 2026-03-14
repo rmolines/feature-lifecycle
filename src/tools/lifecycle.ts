@@ -4,7 +4,7 @@ import { CycleSchema, DraftSchema, PrdSchema, SCHEMAS } from "../schemas.js";
 import {
   parseDocument,
   serializeDocument,
-  getInitiativesRoot,
+  getMissionsRoot,
 } from "../parser.js";
 import { updateStatusCache } from "./status.js";
 import {
@@ -47,11 +47,13 @@ export function register(server: McpServer): void {
     "Promotes a draft initiative to 'ready' by creating prd.md with valid frontmatter derived from draft.md",
     {
       mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
     },
-    async ({ mission, module }) => {
-      const root = getInitiativesRoot();
-      const dir = join(root, mission, module);
+    async ({ mission, stage, module }) => {
+      const resolvedStage = stage || "_backlog";
+      const root = getMissionsRoot();
+      const dir = join(root, mission, resolvedStage, module);
       const draftPath = join(dir, "draft.md");
       const prdPath = join(dir, "prd.md");
 
@@ -120,7 +122,7 @@ export function register(server: McpServer): void {
       );
 
       await writeFile(prdPath, prdContent, "utf-8");
-      await updateStatusCache(mission, module);
+      await updateStatusCache(mission, resolvedStage, module);
       triggerReindex();
 
       return {
@@ -143,15 +145,17 @@ export function register(server: McpServer): void {
   // ── init_archive ────────────────────────────────────────────────────────────
   server.tool(
     "init_archive",
-    "Archives a module by moving it to {mission}/archived/{module}/",
+    "Archives a module by moving it to {mission}/{stage}/archived/{module}/",
     {
       mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
     },
-    async ({ mission, module }) => {
-      const root = getInitiativesRoot();
-      const srcPath = join(root, mission, module);
-      const archivedDir = join(root, mission, "archived");
+    async ({ mission, stage, module }) => {
+      const resolvedStage = stage || "_backlog";
+      const root = getMissionsRoot();
+      const srcPath = join(root, mission, resolvedStage, module);
+      const archivedDir = join(root, mission, resolvedStage, "archived");
       const destPath = join(archivedDir, module);
 
       if (!existsSync(srcPath) || !statSync(srcPath).isDirectory()) {
@@ -209,6 +213,7 @@ export function register(server: McpServer): void {
     "Adds a new cycle document to a module's cycles/ directory",
     {
       mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
       type: z
         .enum(["framing", "research", "analysis", "spike", "mockup", "interview"])
@@ -221,9 +226,10 @@ export function register(server: McpServer): void {
         .optional()
         .describe("Markdown body content for the cycle file"),
     },
-    async ({ mission, module, type, description, content }) => {
-      const root = getInitiativesRoot();
-      const dir = join(root, mission, module);
+    async ({ mission, stage, module, type, description, content }) => {
+      const resolvedStage = stage || "_backlog";
+      const root = getMissionsRoot();
+      const dir = join(root, mission, resolvedStage, module);
 
       if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         return {
@@ -278,7 +284,7 @@ export function register(server: McpServer): void {
 
       const fileContent = serializeDocument(cycleData, content ? `\n${content}\n` : "\n");
       await writeFile(filePath, fileContent, "utf-8");
-      await updateStatusCache(mission, module);
+      await updateStatusCache(mission, resolvedStage, module);
       triggerReindex();
 
       return {
@@ -303,6 +309,7 @@ export function register(server: McpServer): void {
     "Validates a document's frontmatter against its schema without modifying it",
     {
       mission: z.string().describe("Mission name (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z
         .string()
@@ -310,9 +317,10 @@ export function register(server: McpServer): void {
           "Filename to validate (e.g. 'draft.md', 'prd.md', 'review.md')"
         ),
     },
-    async ({ mission, module, file }) => {
-      const root = getInitiativesRoot();
-      const filePath = join(root, mission, module, file);
+    async ({ mission, stage, module, file }) => {
+      const resolvedStage = stage || "_backlog";
+      const root = getMissionsRoot();
+      const filePath = join(root, mission, resolvedStage, module, file);
 
       if (!existsSync(filePath)) {
         return {

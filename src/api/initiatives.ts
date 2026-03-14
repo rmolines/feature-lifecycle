@@ -312,7 +312,7 @@ export async function handleGetStatus3(
     }
 
     const artifacts: string[] = [];
-    const docFiles = ["draft.md", "prd.md", "plan.md", "results.md", "review.md"];
+    const docFiles = ["draft.md", "draft-module.md", "prd.md", "module.md", "plan.md", "results.md", "review.md"];
     for (const f of docFiles) {
       if (existsSync(join(moduleDir, f))) artifacts.push(f);
     }
@@ -321,8 +321,8 @@ export async function handleGetStatus3(
     if (existsSync(join(moduleDir, "review.md"))) status = "approved";
     else if (existsSync(join(moduleDir, "results.md"))) status = "building";
     else if (existsSync(join(moduleDir, "plan.md"))) status = "planned";
-    else if (existsSync(join(moduleDir, "prd.md"))) status = "ready";
-    else if (existsSync(join(moduleDir, "draft.md"))) status = "exploring";
+    else if (existsSync(join(moduleDir, "prd.md")) || existsSync(join(moduleDir, "module.md"))) status = "ready";
+    else if (existsSync(join(moduleDir, "draft.md")) || existsSync(join(moduleDir, "draft-module.md"))) status = "exploring";
 
     return jsonResponse({ mission, stage, module, status, artifacts });
   } catch (err) {

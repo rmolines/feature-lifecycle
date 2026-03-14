@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { SCHEMAS, DOCUMENT_TYPES } from "../schemas.js";
-import { getInitiativesRoot, serializeDocument } from "../parser.js";
+import { getMissionsRoot, serializeDocument } from "../parser.js";
 import { updateStatusCache } from "./status.js";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
@@ -24,11 +24,15 @@ export function register(server: McpServer): void {
           `Document type to create. Valid types: ${DOCUMENT_TYPES.join(", ")}`
         ),
       mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      stage: z
+        .string()
+        .optional()
+        .describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z
         .string()
         .optional()
         .describe(
-          "Module slug (e.g. 'query-layer'). Not required for mission.md"
+          "Module slug (e.g. 'query-layer'). Not required for mission.md or stage-level docs"
         ),
       fields: z
         .record(z.unknown())
@@ -38,7 +42,9 @@ export function register(server: McpServer): void {
         .optional()
         .describe("Optional markdown body content"),
     },
-    async ({ type, mission, module, fields, content }) => {
+    async ({ type, mission, stage, module, fields, content }) => {
+      const resolvedStage = stage || "_backlog";
+      const isStageLevel = type === "stage.md" || type === "draft-stage.md";
       // 1. Validate document type
       if (!DOCUMENT_TYPES.includes(type)) {
         return {
@@ -90,10 +96,12 @@ export function register(server: McpServer): void {
       }
 
       // 3. Build directory and file path
-      const root = getInitiativesRoot();
+      const root = getMissionsRoot();
       let dir: string;
       if (type === "mission.md") {
         dir = join(root, mission);
+      } else if (isStageLevel) {
+        dir = join(root, mission, resolvedStage);
       } else {
         if (!module) {
           return {
@@ -108,7 +116,7 @@ export function register(server: McpServer): void {
             ],
           };
         }
-        dir = join(root, mission, module);
+        dir = join(root, mission, resolvedStage, module);
       }
 
       const filePath = join(dir, type);
@@ -140,7 +148,7 @@ export function register(server: McpServer): void {
 
       // 7. Update status cache + trigger reindex
       if (module) {
-        await updateStatusCache(mission, module);
+        await updateStatusCache(mission, resolvedStage, module);
       }
       triggerReindex();
 

@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { SCHEMAS, DOCUMENT_TYPES } from "../schemas.js";
 import {
-  getInitiativesRoot,
+  getMissionsRoot,
   parseDocument,
   serializeDocument,
 } from "../parser.js";
@@ -18,11 +18,12 @@ function triggerReindex(): void {
 
 function resolveDocPath(
   mission: string,
+  stage: string,
   module: string,
   file: string
 ): string {
-  const root = getInitiativesRoot();
-  return join(root, mission, module, file);
+  const root = getMissionsRoot();
+  return join(root, mission, stage, module, file);
 }
 
 export function register(server: McpServer): void {
@@ -32,6 +33,7 @@ export function register(server: McpServer): void {
     "Merges new frontmatter fields into an existing initiative document, validates against schema, then writes back",
     {
       mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z
         .string()
@@ -42,8 +44,9 @@ export function register(server: McpServer): void {
         .record(z.unknown())
         .describe("Fields to update. New values override existing; omitted fields are preserved."),
     },
-    async ({ mission, module, file, fields }) => {
-      const filePath = resolveDocPath(mission, module, file);
+    async ({ mission, stage, module, file, fields }) => {
+      const resolvedStage = stage || "_backlog";
+      const filePath = resolveDocPath(mission, resolvedStage, module, file);
 
       // Check file exists
       if (!existsSync(filePath)) {
@@ -148,6 +151,7 @@ export function register(server: McpServer): void {
     "Replaces the content of a specific markdown section (## Heading) in an initiative document",
     {
       mission: z.string().describe("Mission slug (e.g. 'fl', 'akn')"),
+      stage: z.string().optional().describe("Stage slug. Defaults to '_backlog' if not provided."),
       module: z.string().describe("Module slug (e.g. 'query-layer')"),
       file: z.string().describe("Document filename (e.g. 'draft.md', 'prd.md')"),
       heading: z
@@ -157,8 +161,9 @@ export function register(server: McpServer): void {
         ),
       content: z.string().describe("New content for the section (without the heading line itself)"),
     },
-    async ({ mission, module, file, heading, content }) => {
-      const filePath = resolveDocPath(mission, module, file);
+    async ({ mission, stage, module, file, heading, content }) => {
+      const resolvedStage = stage || "_backlog";
+      const filePath = resolveDocPath(mission, resolvedStage, module, file);
 
       // Check file exists
       if (!existsSync(filePath)) {
