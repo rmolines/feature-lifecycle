@@ -130,6 +130,47 @@ If critical inconsistencies found: report to the user before starting.
 
 ---
 
+## Branch setup
+
+Before running any deliverable, ensure commits go to an isolated feature branch.
+
+### Read branch config
+
+```bash
+BRANCH_PREFIX=$(grep "^branch-prefix:" .claude/project.md 2>/dev/null | sed 's/^branch-prefix: //' | head -1)
+MAIN_BRANCH=$(grep "^main-branch:" .claude/project.md 2>/dev/null | sed 's/^main-branch: //' | head -1)
+BRANCH_PREFIX=${BRANCH_PREFIX:-feat/}
+MAIN_BRANCH=${MAIN_BRANCH:-main}
+```
+
+### Create or checkout feature branch
+
+```bash
+MODULE=<module slug from plan path>
+FEATURE_BRANCH="${BRANCH_PREFIX}${MODULE}"
+
+git fetch origin
+
+if git show-ref --verify --quiet "refs/heads/$FEATURE_BRANCH"; then
+  # Branch exists (re-entry after /clear) — checkout
+  git checkout "$FEATURE_BRANCH"
+else
+  # Create from origin/<main-branch>
+  git checkout -b "$FEATURE_BRANCH" "origin/$MAIN_BRANCH"
+fi
+```
+
+Report:
+```
+Branch: <feature branch name>
+Base: origin/<main branch>
+Status: created | checked out (existing)
+```
+
+All subsequent integration commits go to this branch. Do not push — push is handled by `/launchpad:ship`.
+
+---
+
 ## Baseline check (hard gate)
 
 Before launching any subagent:
@@ -438,6 +479,7 @@ This prevents the next `/review` from seeing stale findings.
 | Structured results | Expect and parse the result schema. Proceed on narrative but note it. |
 | Worktree for parallel writes | If two deliverables run in the same batch and modify files, use worktree isolation. |
 | Commit per deliverable | Stage only files_changed — never git add -A. Commit immediately after integration. |
+| Feature branch isolation | Create feat/<module> before execution. Never commit to main branch during delivery. |
 
 ---
 
@@ -453,6 +495,7 @@ This prevents the next `/review` from seeing stale findings.
 | Skipping baseline check | Always verify build + tests before starting |
 | Enriching prompt with session context | Only use runtime context block — no session state |
 | Leaving changes uncommitted after integration | Commit per deliverable using files_changed from structured result |
+| Committing directly to main/master | Create feature branch on entry — all commits go to feat/<module> |
 
 ---
 
