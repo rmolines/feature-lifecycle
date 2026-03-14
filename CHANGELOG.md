@@ -1,6 +1,6 @@
 # Changelog
 
-## workspace-server-migration — 2026-03-13
+## workspace-server-migration — PR #13 — 2026-03-13
 **Type:** migration
 **PRD:** ~/.claude/initiatives/fl/workspace-server-migration/draft.md
 
