@@ -1,15 +1,30 @@
 # Changelog
 
+## workspace-server — PR #11 — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/initiatives/fl/workspace-server/prd.md
+**Commit:** `git show 9708523`
+**What:** Unified Bun server extending initiatives-db MCP with HTTP/WS dual transport, REST API reusing domain logic, file-based view routing, filesystem watcher with WebSocket hot-reload, design system (tokens.css + components.js), and cockpit dashboard (Alpine.js + Tailwind CDN).
+
 ## QMD fallback pitfall — 7eed480 — 2026-03-13
 **Type:** docs
 **Commit:** `git show 7eed480`
 **What:** CLAUDE.md pitfall documenting QMD fallback strategy for reading initiatives files. All skills now reference this pitfall instead of failing with 6+ QMD retries when files aren't indexed.
 
-## domain rename — aec6c7d — 2026-03-13
+## domain-rename — 59b9b33 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/initiatives/fl/domain-rename/prd.md
-**Commit:** `git show aec6c7d`
-**What:** Rename domain terminology: project→mission, initiative→module, milestone→stage. Skills, MCP tools, scripts, and templates updated. Physical paths unchanged.
+**Commit:** `git show aec6c7d` (main), `git show 59b9b33` (cosmetic fixes)
+**Decisions:** see LEARNINGS.md#domain-rename (if applicable)
+**What:** Rename domain terminology across MCP params, cockpit JSON, schemas, skills, and templates:
+- project → mission
+- slug → module (MCP params)
+- initiative → module (dir concept, cockpit JSON)
+- vision.md → mission.md (file type)
+- milestone (M1) → stage (S1) (sections, JSON keys)
+- cockpit → Mission Control (UI label)
+
+Physical paths unchanged.
 
 ## initiatives-db — PR #10 — 2026-03-13
 **Type:** feat
