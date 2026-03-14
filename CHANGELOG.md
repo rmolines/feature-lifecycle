@@ -1,5 +1,16 @@
 # Changelog
 
+## QMD fallback pitfall — 7eed480 — 2026-03-13
+**Type:** docs
+**Commit:** `git show 7eed480`
+**What:** CLAUDE.md pitfall documenting QMD fallback strategy for reading initiatives files. All skills now reference this pitfall instead of failing with 6+ QMD retries when files aren't indexed.
+
+## domain rename — aec6c7d — 2026-03-13
+**Type:** feat
+**PRD:** ~/.claude/initiatives/fl/domain-rename/prd.md
+**Commit:** `git show aec6c7d`
+**What:** Rename domain terminology: project→mission, initiative→module, milestone→stage. Skills, MCP tools, scripts, and templates updated. Physical paths unchanged.
+
 ## initiatives-db — PR #10 — 2026-03-13
 **Type:** feat
 **PRD:** ~/.claude/initiatives/fl/initiatives-db/prd.md
