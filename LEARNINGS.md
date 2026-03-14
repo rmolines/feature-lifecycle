@@ -3,6 +3,11 @@
 - gray-matter parses YAML `date:` fields as JavaScript `Date` objects, not strings. The PRD specifies `z.string().date()` for date fields, but gray-matter silently coerces ISO strings to `Date` at parse time. A `z.union([z.string(), z.date()]).transform(...)` adapter is required for every date field. If you add a new document type and copy `z.string().date()` from the PRD spec, validation will silently reject all existing documents. Always use the `dateField` union adapter from `schemas.ts`.
 - `triggerReindex()` is copy-pasted across three tool files (`create.ts`, `update.ts`, `lifecycle.ts`). Any change to the reindex path, error handling, or fire-and-forget vs await must be applied in three places. Cross-cutting side effects in MCP tools should be extracted to a shared utility.
 
+## workspace-server
+
+- HTTP API (`src/api/initiatives.ts`) uses `project`/`initiative` field names while MCP tools use `mission`/`module` for the same filesystem paths. The PRD said the HTTP API would expose "the same data as MCP tools" but didn't specify a naming contract. Any consumer bridging both transports needs an explicit vocabulary mapping.
+- `fs.watch` with `{ recursive: true }` works on macOS (FSEvents) but silently degrades to non-recursive on Linux. The spike was macOS-only, so this wasn't caught. If the server ever runs on Linux, nested initiative changes won't trigger hot-reload.
+
 ## workspace-search
 
 - QMD's CLI query expansion (`qmd query "..."`) generates nonsensical expansions for Portuguese terms (e.g., "separada" → "separada 5 injuries"). This breaks single-string CLI queries for PT-BR content. Workaround: use MCP sub-queries with explicit `lex` + `vec` types instead of relying on the CLI's built-in expansion. The MCP path is the intended consumer anyway, but this is a trap for manual CLI debugging.
