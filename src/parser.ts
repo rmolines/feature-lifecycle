@@ -72,7 +72,8 @@ export function resolveInitiativePath(project: string, initiative: string): stri
 // ─── Missions (3-level: mission / stage / module) ───────────────────────────
 
 export function getMissionsRoot(): string {
-  return MISSIONS_PATH;
+  if (existsSync(MISSIONS_PATH)) return MISSIONS_PATH;
+  return getInitiativesRoot();
 }
 
 /**
