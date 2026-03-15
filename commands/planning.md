@@ -258,7 +258,14 @@ Each deliverable follows this structure:
 > ```
 
 **Acceptance:** `<command>` → <what must pass>
+**Human test:** <plain language — what the user should do and what they should observe, no CLI commands>
 ```
+
+The **Human test** describes what the user should physically do to verify the deliverable works.
+Write it as if explaining to someone who knows the product but not the codebase:
+- "Open X, do Y, observe Z" — not "run npm test"
+- Focus on the observable outcome, not the implementation
+- If the deliverable has no user-facing component, write "No manual test needed — covered by automated validation"
 
 Each deliverable must reference which requirements from the PRD it addresses using R<N> IDs. This enables requirement traceability in the plan-view.
 
@@ -275,6 +282,7 @@ Before finalizing each deliverable's prompt, verify:
 - [ ] If touching hot files: includes "read before editing" warning
 - [ ] Specifies which requirements (R<N>) this deliverable covers
 - [ ] Incorporates relevant Technical Specs from the PRD (stack, patterns, constraints, decisions)
+- [ ] Has a human-readable test that a non-technical person could follow
 
 ---
 
@@ -326,6 +334,7 @@ files:
 - package.json
 max_retries: 2
 acceptance: npm test exits 0
+human_test: Open the app, perform <core action>, verify <observable result>
 
 task: D2
 title: Environment variable scaffolding
@@ -338,6 +347,7 @@ files:
 - .env.example
 max_retries: 2
 acceptance: grep "NEW_VAR" .env.example returns the line
+human_test: No manual test needed — covered by automated validation
 
 task: D3
 title: New API endpoint with integration test
@@ -351,6 +361,7 @@ files:
 - tests/newRoute.test.ts
 max_retries: 2
 acceptance: npm run build exits 0 and new endpoint returns 200
+human_test: Open <screen>, trigger <action>, verify <expected response>
 ```
 
 Do not wrap the DAG in code fences (` ``` `). The DAG must be bare key:value text for deterministic parsing.
